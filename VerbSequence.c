@@ -14,7 +14,7 @@
 #include <sys/time.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include "utilities.h"
+#include <utilities.h>
 #include "VerbSequence.h"
 #include "sqlite3.h"
 

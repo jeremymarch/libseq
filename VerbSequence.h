@@ -10,8 +10,8 @@
 #define VerbSequence_h
 
 #include <stdio.h>
-#include "libmorph.h"
-#include "GreekForms.h"
+#include <libmorph.h>
+#include <GreekForms.h>
 
 enum {
     GAME_INVALID = -1,
