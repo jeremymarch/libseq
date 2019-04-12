@@ -751,6 +751,14 @@ int nextVerbSeqCustom(VerbFormD *vf1, VerbFormD *vf2, VerbSeqOptions *vso)
     vf2->voice = vseq[currentVerb].voice;
     vf2->mood = vseq[currentVerb].mood;
     vf2->verbid = vseq[currentVerb].verbid;
+    
+    lastVF.person = vf2->person;
+    lastVF.number = vf2->number;
+    lastVF.tense = vf2->tense;
+    lastVF.voice = vf2->voice;
+    lastVF.mood = vf2->mood;
+    lastVF.verb = &verbs[vf2->verbid];
+    
     removeFromList(vseq, &seqNum, currentVerb);
     
     fprintf(stderr, "steps: %d, seq count: %d\n", stepsAway(vf1, vf2), seqNum);
@@ -1504,6 +1512,11 @@ bool setHeadAnswer(bool correct, char *givenAnswer, const char *elapsedTime, Ver
     */
     if (db)
     {
+        int lastVerbIndex = findVerbIndexByPointer(lastVF.verb);
+        if (lastVerbIndex < 0)
+        {
+            return false;
+        }
         snprintf(sqlitePrepquery, SQLITEPREPQUERYLEN, "INSERT INTO verbseq VALUES (NULL,%ld,%ld,%d,%d,%d,%d,%d,%d,%d,'%s','%s');", time(NULL), vso->gameId, lastVF.person, lastVF.number, lastVF.tense, lastVF.voice, lastVF.mood, findVerbIndexByPointer(lastVF.verb), correct, elapsedTime, givenAnswer);
         char *zErrMsg = 0;
         int rc = sqlite3_exec(db, sqlitePrepquery, 0, 0, &zErrMsg);

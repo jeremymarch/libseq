@@ -40,6 +40,8 @@ struct vfr {
     char answer[130]; //needs to be more than longest answer: Longest Form: 2,1,3,0,2, v: καταστήσαιεν, καταστήσειαν, κατασταῖεν, κατασταίησαν, l: 102
 };
 
+
+
 //for mmap on ios see: https://github.com/mekjaer/ios-mmap/blob/master/ios-mmap-example/ios-mmap-example/AppDelegate.m
 typedef struct da {
     unsigned int numRecords;
@@ -61,6 +63,42 @@ typedef struct so {
     int moods[4];
     int verbs[125];
 } SeqOptions;
+
+typedef struct vsoNew {
+    
+    bool startOnFirstSing;
+    bool askEndings;
+    bool askPrincipalParts;
+    bool isHCGame; //else is practice
+    bool shuffle;
+    int repsPerVerb;
+    int degreesToChange;
+
+    //int practiceVerbID; //to just practice on one verb
+    long gameId;
+    int score;
+    int lives;
+    int verbSeq;
+    bool firstVerbSeq;
+    bool lastAnswerCorrect;
+
+    int numUnits;
+    int units[20];
+    
+    //SeqOptions
+    int numPerson;
+    int numNumbers;
+    int numTense;
+    int numVoice;
+    int numMood;
+    int numVerbs;
+    int persons[3];
+    int numbers[2];
+    int tenses[6];
+    int voices[3];
+    int moods[4];
+    int *verbs;
+} VerbSeqOptionsNew;
 
 typedef struct vso {
     bool startOnFirstSing;
