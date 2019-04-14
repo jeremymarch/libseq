@@ -65,7 +65,7 @@ int nextVS(int *seq, VerbFormD *vf1, VerbFormD *vf2)
 {
     fprintf(stdout, "SWIFT LAYER1\n\n");
     //int a = nextVerbSeq2(vf1, vf2, &swiftLayerOptions);
-    int a = nextVerbSeqCustom(vf1, vf2, &swiftLayerOptions);
+    int a = nextVerbSeqCustom(vf1, vf2);
     *seq = swiftLayerOptions.verbSeq;
     fprintf(stdout, "SWIFT LAYER2\n\n");
     return a;

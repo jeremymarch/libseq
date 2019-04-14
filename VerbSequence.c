@@ -38,7 +38,8 @@
 //these are assigned to globalGameID.
 //its practice, insipient, or 1-n = a real saved game
 
-int nextVerbSeqCustom(VerbFormD *vf1, VerbFormD *vf2, VerbSeqOptions *vso);
+void copyVFD(VerbFormD *fromVF, VerbFormD *toVF);
+void copyVFC(VerbFormC *fromVF, VerbFormC *toVF);
 
 //GLOBAL VARIABLES
 DataFormat *hcdata = NULL;
@@ -133,7 +134,7 @@ void addToRecentVFArray(VerbFormC *vf)
     recentVFArray[recentVFArrayHead].verb = vf->verb;
 }
 
-VerbFormC lastVF;
+VerbFormD lastVF;
 
 int findVerbIndexByPointer(Verb *v)
 {
@@ -529,7 +530,6 @@ void removeFromList(VerbFormD *list, int *listCount, int itemToRemove)
     for (int i = itemToRemove; i < *listCount - 1; i++)
     {
         list[i] = list[i+1];
-        
     }
     *listCount -= 1;
 }
@@ -551,12 +551,7 @@ void prepareSeq(VerbFormD *vseq, int *seqNum)
         else if (vseq[i].tense != AORIST && vseq[i].tense != FUTURE && vseq[i].voice != ACTIVE)
         {
             VerbFormD temp;
-            temp.person = vseq[i].person;
-            temp.number = vseq[i].number;
-            temp.tense = vseq[i].tense;
-            temp.voice = vseq[i].voice;
-            temp.mood = vseq[i].mood;
-            temp.verbid = vseq[i].verbid;
+            copyVFD(&vseq[i], &temp);
             
             for (int j = i + 1; j < *seqNum - 1; j++)
             {
@@ -576,6 +571,7 @@ void prepareSeq(VerbFormD *vseq, int *seqNum)
         
     }
 }
+
 int seqNum = 0;
 int removeAlreadySeen(int verbid)
 {
@@ -662,12 +658,7 @@ bool buildSequence(VerbSeqOptions *vso)
                             {
                                 memmove(&vseq[seqNum], &vf, sizeof(vf));
                                 /*
-                                vseq[seqNum].person = vf.person;
-                                vseq[seqNum].number = vf.number;
-                                vseq[seqNum].tense = vf.tense;
-                                vseq[seqNum].voice = vf.voice;
-                                vseq[seqNum].mood = vf.mood;
-                                vseq[seqNum].verbid = vf.verbid;
+                                 copyVFD(&vf, &vseq[seqNum);
                                 */
                                 //fprintf(stderr, "Building seq #: %d, p%d, n%d, t%d, v%d, m%d, verbid%d, %s\n", seqNum, vseq[seqNum].person, vseq[seqNum].number, vseq[seqNum].tense, vseq[seqNum].voice, vseq[seqNum].mood, vseq[seqNum].verbid, buffer);
                                 seqNum++;
@@ -721,48 +712,62 @@ bool buildSequence(VerbSeqOptions *vso)
     return true;
 }
 
-int nextVerbSeqCustom(VerbFormD *vf1, VerbFormD *vf2, VerbSeqOptions *vso)
+void copyVFD(VerbFormD *fromVF, VerbFormD *toVF)
 {
+    toVF->person = fromVF->person;
+    toVF->number = fromVF->number;
+    toVF->tense = fromVF->tense;
+    toVF->voice = fromVF->voice;
+    toVF->mood = fromVF->mood;
+    toVF->verbid = fromVF->verbid;
+}
+
+void copyVFC(VerbFormC *fromVF, VerbFormC *toVF)
+{
+    toVF->person = fromVF->person;
+    toVF->number = fromVF->number;
+    toVF->tense = fromVF->tense;
+    toVF->voice = fromVF->voice;
+    toVF->mood = fromVF->mood;
+    toVF->verb = fromVF->verb;
+}
+
+int nextVerbSeqCustom(VerbFormD *vf1, VerbFormD *vf2)
+{
+    if (seqNum < 1)
+    {
+        return 0;
+    }
     //char buffer[1024];
     //int len = 1024;
-    currentVerb = 0;
+    currentVerb = 0; //always start at head of list
+    
+    //this loads first form into vf1 and removes it from list, if vf1 is empty.  this happens on first time called only
     if (vf1->verbid < 0) //start at -1
     {
-        vf1->person = vseq[currentVerb].person;
-        vf1->number = vseq[currentVerb].number;
-        vf1->tense = vseq[currentVerb].tense;
-        vf1->voice = vseq[currentVerb].voice;
-        vf1->mood = vseq[currentVerb].mood;
-        vf1->verbid = vseq[currentVerb].verbid;
+        copyVFD(&vseq[currentVerb], vf1);
         removeFromList(vseq, &seqNum, currentVerb);
     }
 
     //getAbbrevDescription(vf1, buffer, len);
     //fprintf(stderr, "current verb A: %d, person: %d, %s, %d\n", currentVerb, vf1->person,  buffer, vf1->verb->verbid);
     
-    while (currentVerb < seqNum && stepsAway(vf1, &vseq[currentVerb]) != 2)
+    while (currentVerb < seqNum && stepsAway(vf1, &vseq[currentVerb]) != 2/*fix me: change to variable*/)
     {
         currentVerb++;
     }
     
-    vf2->person = vseq[currentVerb].person;
-    vf2->number = vseq[currentVerb].number;
-    vf2->tense = vseq[currentVerb].tense;
-    vf2->voice = vseq[currentVerb].voice;
-    vf2->mood = vseq[currentVerb].mood;
-    vf2->verbid = vseq[currentVerb].verbid;
+    if (currentVerb == seqNum)
+    {
+        return 0; //list ran out
+    }
     
-    lastVF.person = vf2->person;
-    lastVF.number = vf2->number;
-    lastVF.tense = vf2->tense;
-    lastVF.voice = vf2->voice;
-    lastVF.mood = vf2->mood;
-    lastVF.verb = &verbs[vf2->verbid];
-    
+    //add to vf2 and lastVFD, then remove from list
+    copyVFD(&vseq[currentVerb], vf2);
+    copyVFD(&vseq[currentVerb], &lastVF);
     removeFromList(vseq, &seqNum, currentVerb);
     
     fprintf(stderr, "steps: %d, seq count: %d\n", stepsAway(vf1, vf2), seqNum);
-    
     
     //vf2 = &vseq[currentVerb];
     //getAbbrevDescription(vf2, buffer, len);
@@ -971,7 +976,8 @@ int nextVerbSeq(VerbFormC *vf1, VerbFormC *vf2, VerbSeqOptions *vso)
     lastVF.tense = vf2->tense;
     lastVF.voice = vf2->voice;
     lastVF.mood = vf2->mood;
-    lastVF.verb = vf2->verb;
+    lastVF.verbid = vf2->verb->verbid;
+    
     
     addToRecentVFArray(vf2);
     
@@ -1512,12 +1518,12 @@ bool setHeadAnswer(bool correct, char *givenAnswer, const char *elapsedTime, Ver
     */
     if (db)
     {
-        int lastVerbIndex = findVerbIndexByPointer(lastVF.verb);
+        int lastVerbIndex = lastVF.verbid;
         if (lastVerbIndex < 0)
         {
             return false;
         }
-        snprintf(sqlitePrepquery, SQLITEPREPQUERYLEN, "INSERT INTO verbseq VALUES (NULL,%ld,%ld,%d,%d,%d,%d,%d,%d,%d,'%s','%s');", time(NULL), vso->gameId, lastVF.person, lastVF.number, lastVF.tense, lastVF.voice, lastVF.mood, findVerbIndexByPointer(lastVF.verb), correct, elapsedTime, givenAnswer);
+        snprintf(sqlitePrepquery, SQLITEPREPQUERYLEN, "INSERT INTO verbseq VALUES (NULL,%ld,%ld,%d,%d,%d,%d,%d,%d,%d,'%s','%s');", time(NULL), vso->gameId, lastVF.person, lastVF.number, lastVF.tense, lastVF.voice, lastVF.mood, lastVF.verbid, correct, elapsedTime, givenAnswer);
         char *zErrMsg = 0;
         int rc = sqlite3_exec(db, sqlitePrepquery, 0, 0, &zErrMsg);
         if( rc != SQLITE_OK )
