@@ -732,6 +732,12 @@ void copyVFC(VerbFormC *fromVF, VerbFormC *toVF)
     toVF->verb = fromVF->verb;
 }
 
+
+/*
+ if brand new, pass an empty vf in vf1
+ else if last was correct, pass old vf2 into vf1
+ else if last was wrong, pass same vf1 in vf1
+ */
 int nextVerbSeqCustom(VerbFormD *vf1, VerbFormD *vf2)
 {
     if (seqNum < 1)
