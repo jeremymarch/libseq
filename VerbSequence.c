@@ -542,7 +542,7 @@ void prepareSeq(VerbFormD *vseq, int *seqNum)
     //weed out mid/passive forms that are the same
     for (int i = 0; i < *seqNum; i++)
     {
-        if (getForm2(&vseq[i], buffer, bufferCapacity, true, false) && strlen(buffer) == 3 && !memcmp(&buffer[0], "—", 3))
+        if (getForm2(&vseq[i], buffer, bufferCapacity, true, false) && strlen(buffer) == 3 && !memcmp(&buffer[0], "—", 3) /* em dash */ && !memcmp(&buffer[0], "-", 1) /* hyphen */ )
         {
             fprintf(stderr, "remove: %s\n", buffer);
             removeFromList(vseq, seqNum, i);
@@ -568,7 +568,12 @@ void prepareSeq(VerbFormD *vseq, int *seqNum)
                 }
             }
         }
-        
+        else if ( !isValidFormForUnitD(&vseq[i], highestUnit) )
+        {
+            //fprintf(stderr, "remove3: %s\n", buffer);
+            removeFromList(vseq, seqNum, i);
+            //fprintf(stderr, "seqNum %d\n", *seqNum);
+        }
     }
 }
 
@@ -732,6 +737,16 @@ void copyVFC(VerbFormC *fromVF, VerbFormC *toVF)
     toVF->verb = fromVF->verb;
 }
 
+//true if middle/passive form is being changed from middle to passive or vice versa
+//i.e. if both are middle/passive forms and their voices are not the same
+bool mpToMp(VerbFormD *vf1, VerbFormD *vf2)
+{
+    if ( getVoiceDescription2(vf1) == MIDDLEPASSIVE && getVoiceDescription2(vf2) == MIDDLEPASSIVE && vf1->voice != vf2->voice )
+    {
+        return true;
+    }
+    return false;
+}
 
 /*
  if brand new, pass an empty vf in vf1
@@ -758,7 +773,7 @@ int nextVerbSeqCustom(VerbFormD *vf1, VerbFormD *vf2)
     //getAbbrevDescription(vf1, buffer, len);
     //fprintf(stderr, "current verb A: %d, person: %d, %s, %d\n", currentVerb, vf1->person,  buffer, vf1->verb->verbid);
     
-    while (currentVerb < seqNum && stepsAway(vf1, &vseq[currentVerb]) != 2/*fix me: change to variable*/)
+    while (currentVerb < seqNum && stepsAway(vf1, &vseq[currentVerb]) != 2/*fix me: change to variable*/ && !mpToMp(vf1, &vseq[currentVerb]) )
     {
         currentVerb++;
     }
@@ -1100,6 +1115,21 @@ void changeFormByDegrees(VerbFormC *vf, int degrees)
     vf->mood = tempMood;
 }
 
+
+//unit is the highest unit we're up to
+bool isValidFormForUnitD(VerbFormD *vf, int unit)
+{
+    VerbFormC vfc;
+    vfc.person = vf->person;
+    vfc.number = vf->number;
+    vfc.tense = vf->tense;
+    vfc.voice = vf->voice;
+    vfc.mood = vf->mood;
+    vfc.verb = &verbs[vf->verbid];
+    
+    return isValidFormForUnit(&vfc, unit);
+}
+
 //unit is the highest unit we're up to
 bool isValidFormForUnit(VerbFormC *vf, int unit)
 {
@@ -1122,17 +1152,21 @@ bool isValidFormForUnit(VerbFormC *vf, int unit)
     {
         if (vf->mood == IMPERATIVE)
             return false;
-    }
+    } /* I don't think we need this
     else if (unit <= 11)
     {
         return true;
-    }
+    } */
     else if (unit <= 12)
     {
         if ((utf8HasSuffix(vf->verb->present, "μι") && vf->tense == AORIST) || (utf8HasSuffix(vf->verb->present, "στημι") && (vf->tense == AORIST || vf->tense == PERFECT || vf->tense == PLUPERFECT)))
             return false;
     }
-    
+    else if (unit <= 16)
+    {
+        if (vf->tense == FUTURE && vf->mood == OPTATIVE)
+            return false;
+    }
     return true;
 }
 

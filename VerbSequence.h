@@ -138,6 +138,7 @@ void changeFormByDegrees(VerbFormC *verbform, int degrees);
 void generateForm(VerbFormC *verbform);
 void getDistractorsForChange(VerbFormC *orig, VerbFormC *new, int numDistractors, char *buffer);
 bool isValidFormForUnit(VerbFormC *vf, int unit);
+bool isValidFormForUnitD(VerbFormD *vf, int unit);
 
 
 Verb *getRandomVerb(int *units, int numUnits);
