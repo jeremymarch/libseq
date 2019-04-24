@@ -40,8 +40,10 @@
 
 void copyVFD(VerbFormD *fromVF, VerbFormD *toVF);
 void copyVFC(VerbFormC *fromVF, VerbFormC *toVF);
-
+bool setupVerbFormsTable(void);
 void insertDB(int formid, VerbFormD *vf, sqlite3_stmt *stmt);
+bool sqliteTableExists(char *tbl_name);
+int sqliteTableCount(char *tbl_name);
 
 //GLOBAL VARIABLES
 DataFormat *hcdata = NULL;
@@ -641,20 +643,10 @@ bool buildSequence(VerbSeqOptions *vso)
     int bufferLen = 1024;
     char buffer[bufferLen];
     VerbFormD vf;
-    int formid = 1;
-    int c = 0;
     
-    sqlite3_stmt *stmt;
-    int rc = sqlite3_prepare_v2(db, "INSERT INTO verbforms  (lastSeen,difficulty,defaultDifficulty,person,number,tense,voice,mood,verbid) VALUES (datetime('now'), ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8);", -1, &stmt, NULL);
-
-    if (rc != SQLITE_OK)
+    for (int vrb = 0; vrb < vso->seqOptions.numVerbs; vrb++)
     {
-        printf("ERROR preparing query: %s\n", sqlite3_errmsg(db));
-        return false;
-    }
-    for (int vrb = 0; vrb < 125/*vso->seqOptions.numVerbs*/; vrb++)
-    {
-        vf.verbid = vrb;//vso->seqOptions.verbs[vrb];
+        vf.verbid = vso->seqOptions.verbs[vrb];
         for (int t = 0; t < vso->seqOptions.numTense; t++)
         {
             vf.tense = vso->seqOptions.tenses[t];
@@ -675,8 +667,6 @@ bool buildSequence(VerbSeqOptions *vso)
                             if (getForm2(&vf, buffer, bufferLen, true, false) && strlen(buffer) > 0)
                             {
                                 memmove(&vseq[seqNum], &vf, sizeof(vf));
-                                //insertDB(formid, &vf, stmt);
-                                formid = formid + 1;
                                 /*
                                  copyVFD(&vf, &vseq[seqNum);
                                 */
@@ -689,8 +679,6 @@ bool buildSequence(VerbSeqOptions *vso)
             }
         }
     }
-    printf("done inserting\n");
-    sqlite3_finalize(stmt);
     
     //fprintf(stderr, "\nshuffle\n\n");
     if (vso->shuffle)
@@ -1530,21 +1518,7 @@ bool dbInit(const char *path)
     //"DROP TABLE IF EXISTS games; DROP TABLE IF EXISTS verbseq;
     
     //DROP TABLE IF EXISTS verbforms;
-    char *sql =  "CREATE TABLE IF NOT EXISTS verbforms (" \
-    "formid INTEGER PRIMARY KEY NOT NULL, " \
-    "lastSeen INTEGER NOT NULL, " \
-    "difficulty INT1 NOT NULL, " \
-    "defaultDifficulty INT1 NOT NULL, " \
-    "person INT1 NOT NULL, " \
-    "number INT1 NOT NULL, " \
-    "tense INT1 NOT NULL, " \
-    "voice INT1 NOT NULL, " \
-    "mood INT1 NOT NULL, " \
-    "verbid INT NOT NULL " \
-    "); " \
-    
-    
-    "CREATE TABLE IF NOT EXISTS games (" \
+    char *sql = "CREATE TABLE IF NOT EXISTS games (" \
     "gameid INTEGER PRIMARY KEY NOT NULL, " \
     "timest INT NOT NULL, " \
     "score INT NOT NULL, " \
@@ -1599,8 +1573,154 @@ bool dbInit(const char *path)
         return false;
     }
     */
+    char *verbForms = "verbforms";
+    bool exists = sqliteTableExists(verbForms);
+    int vfcount = sqliteTableCount(verbForms);
+    
+    printf("exists %d, count %d\n", exists, vfcount);
+    
+    if ( !exists || vfcount < 1)
+    {
+        setupVerbFormsTable();
+        printf("created verb forms table\n");
+    }
     
     printf("sqlite success, version: %s\n", SQLITE_VERSION);
+    
+    return true;
+}
+
+//note the table name is case-sensitive here
+bool sqliteTableExists(char *tbl_name)
+{
+    sqlite3_stmt *stmt;
+    const char *sql = "SELECT 1 FROM sqlite_master where type='table' and name=?";
+    
+    int rc = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
+    if (rc != SQLITE_OK) {
+        printf("error: %s\n", sqlite3_errmsg(db));
+        return false;
+    }
+    sqlite3_bind_text(stmt, 1, tbl_name, -1, SQLITE_TRANSIENT);
+    
+    rc = sqlite3_step(stmt);
+    bool found;
+    if (rc == SQLITE_ROW)
+        found = true;
+    else if (rc == SQLITE_DONE)
+        found = false;
+    else {
+        printf("error: %s\n", sqlite3_errmsg(db));
+        sqlite3_finalize(stmt);
+        return false;
+    }
+    
+    sqlite3_finalize(stmt);
+    return found;
+}
+
+int sqliteTableCount(char *tbl_name)
+{
+    sqlite3_stmt *stmt;
+    snprintf(sqlitePrepquery, SQLITEPREPQUERYLEN, "SELECT count(*) FROM %s;", tbl_name);
+    
+    int rc = sqlite3_prepare_v2(db, sqlitePrepquery, -1, &stmt, NULL);
+    if (rc != SQLITE_OK) {
+        printf("error: %s\n", sqlite3_errmsg(db));
+        return -1;
+    }
+    if (sqlite3_step(stmt) == SQLITE_ROW)
+    {
+        int count = sqlite3_column_int (stmt, 0);
+        sqlite3_finalize(stmt);
+        return count;
+    }
+    else
+    {
+        printf("error: %s\n", sqlite3_errmsg(db));
+        sqlite3_finalize(stmt);
+        return -1;
+    }
+}
+
+bool setupVerbFormsTable(void)
+{
+    seqNum = 0;
+    int bufferLen = 1024;
+    char buffer[bufferLen];
+    VerbFormD vf;
+    int formid = 1;
+    char *zErrMsg = 0;
+    
+    char *create = "DROP TABLE IF EXISTS verbforms; " \
+    "CREATE TABLE IF NOT EXISTS verbforms (" \
+    "formid INTEGER PRIMARY KEY NOT NULL, " \
+    "lastSeen INTEGER NOT NULL, " \
+    "difficulty INT1 NOT NULL, " \
+    "defaultDifficulty INT1 NOT NULL, " \
+    "person INT1 NOT NULL, " \
+    "number INT1 NOT NULL, " \
+    "tense INT1 NOT NULL, " \
+    "voice INT1 NOT NULL, " \
+    "mood INT1 NOT NULL, " \
+    "verbid INT NOT NULL " \
+    "); ";
+    
+    int rc = sqlite3_exec(db, create, NULL, NULL, &zErrMsg);
+    if( rc != SQLITE_OK )
+    {
+        fprintf(stderr, "Create verbforms table SQL error: %s\n", zErrMsg);
+        sqlite3_free(zErrMsg);
+        return false;
+    }
+    
+    sqlite3_stmt *stmt;
+    rc = sqlite3_prepare_v2(db, "INSERT INTO verbforms  (lastSeen,difficulty,defaultDifficulty,person,number,tense,voice,mood,verbid) VALUES (datetime('now'), ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8);", -1, &stmt, NULL);
+    
+    if (rc != SQLITE_OK)
+    {
+        printf("ERROR preparing query: %s\n", sqlite3_errmsg(db));
+        return false;
+    }
+    
+    for (int vrb = 0; vrb < NUM_VERBS; vrb++)
+    {
+        vf.verbid = vrb;
+        for (int t = 0; t < NUM_TENSES; t++)
+        {
+            vf.tense = t;
+            for (int v = 0; v < NUM_VOICES; v++)
+            {
+                vf.voice = v;
+                for (int m = 0; m < NUM_MOODS; m++)
+                {
+                    vf.mood = m;
+                    for (int n = 0; n < NUM_NUMBERS; n++)
+                    {
+                        vf.number = n;
+                        for (int p = 0; p < NUM_PERSONS; p++)
+                        {
+                            vf.person = p;
+                            
+                            //fprintf(stderr, "here: Building seq #: %d, %d, %d, %d, %d, %d, %d\n", c++, vf.person, vf.number, vf.tense, vf.voice, vf.mood, vf.verbid);
+                            if (getForm2(&vf, buffer, bufferLen, true, false) && strlen(buffer) > 0)
+                            {
+                                insertDB(formid, &vf, stmt);
+                                formid = formid + 1;
+                                /*
+                                 copyVFD(&vf, &vseq[seqNum);
+                                 */
+                                //fprintf(stderr, "Building seq #: %d, p%d, n%d, t%d, v%d, m%d, verbid%d, %s\n", seqNum, vseq[seqNum].person, vseq[seqNum].number, vseq[seqNum].tense, vseq[seqNum].voice, vseq[seqNum].mood, vseq[seqNum].verbid, buffer);
+                                seqNum++;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    printf("done creating verbforms table\n");
+    sqlite3_finalize(stmt);
     
     return true;
 }
