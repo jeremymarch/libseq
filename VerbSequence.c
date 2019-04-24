@@ -41,6 +41,8 @@
 void copyVFD(VerbFormD *fromVF, VerbFormD *toVF);
 void copyVFC(VerbFormC *fromVF, VerbFormC *toVF);
 
+void insertDB(int formid, VerbFormD *vf, sqlite3_stmt *stmt);
+
 //GLOBAL VARIABLES
 DataFormat *hcdata = NULL;
 size_t sizeInBytes = 0;
@@ -135,6 +137,7 @@ void addToRecentVFArray(VerbFormC *vf)
 }
 
 VerbFormD lastVF;
+int lastFormID = -1;
 
 int findVerbIndexByPointer(Verb *v)
 {
@@ -638,10 +641,20 @@ bool buildSequence(VerbSeqOptions *vso)
     int bufferLen = 1024;
     char buffer[bufferLen];
     VerbFormD vf;
+    int formid = 1;
+    int c = 0;
+    
+    sqlite3_stmt *stmt;
+    int rc = sqlite3_prepare_v2(db, "INSERT INTO verbforms  (lastSeen,difficulty,defaultDifficulty,person,number,tense,voice,mood,verbid) VALUES (datetime('now'), ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8);", -1, &stmt, NULL);
 
-    for (int vrb = 0; vrb < vso->seqOptions.numVerbs; vrb++)
+    if (rc != SQLITE_OK)
     {
-        vf.verbid = vso->seqOptions.verbs[vrb];
+        printf("ERROR preparing query: %s\n", sqlite3_errmsg(db));
+        return false;
+    }
+    for (int vrb = 0; vrb < 125/*vso->seqOptions.numVerbs*/; vrb++)
+    {
+        vf.verbid = vrb;//vso->seqOptions.verbs[vrb];
         for (int t = 0; t < vso->seqOptions.numTense; t++)
         {
             vf.tense = vso->seqOptions.tenses[t];
@@ -662,6 +675,8 @@ bool buildSequence(VerbSeqOptions *vso)
                             if (getForm2(&vf, buffer, bufferLen, true, false) && strlen(buffer) > 0)
                             {
                                 memmove(&vseq[seqNum], &vf, sizeof(vf));
+                                //insertDB(formid, &vf, stmt);
+                                formid = formid + 1;
                                 /*
                                  copyVFD(&vf, &vseq[seqNum);
                                 */
@@ -674,6 +689,8 @@ bool buildSequence(VerbSeqOptions *vso)
             }
         }
     }
+    printf("done inserting\n");
+    sqlite3_finalize(stmt);
     
     //fprintf(stderr, "\nshuffle\n\n");
     if (vso->shuffle)
@@ -746,6 +763,50 @@ bool mpToMp(VerbFormD *vf1, VerbFormD *vf2)
         return true;
     }
     return false;
+}
+
+int nextVerbSeqCustomDB(VerbFormD *vf1, VerbFormD *vf2)
+{
+    //char *err_msg = 0;
+    sqlite3_stmt *res;
+    
+    char *sql = "SELECT person,number,tense,voice,mood,verbid,formid FROM verbforms WHERE verbid= ?1 ORDER BY lastSeen ASC, RANDOM() LIMIT 20;";
+    int rc = sqlite3_prepare_v2(db, sql, -1, &res, NULL);
+    if (rc == SQLITE_OK) {
+        sqlite3_bind_int(res, 1, 0);
+    } else {
+        fprintf(stderr, "Failed to execute statement: %s\n", sqlite3_errmsg(db));
+        return 0;
+    }
+    
+    while ( sqlite3_step(res) == SQLITE_ROW )
+    {
+        if (vf1->verbid < 0)
+        {
+            vf1->person = sqlite3_column_int(res, 0);
+            vf1->number = sqlite3_column_int(res, 1);
+            vf1->tense = sqlite3_column_int(res, 2);
+            vf1->voice = sqlite3_column_int(res, 3);
+            vf1->mood = sqlite3_column_int(res, 4);
+            vf1->verbid = sqlite3_column_int(res, 5);
+            continue;
+        }
+        
+        vf2->person = sqlite3_column_int(res, 0);
+        vf2->number = sqlite3_column_int(res, 1);
+        vf2->tense = sqlite3_column_int(res, 2);
+        vf2->voice = sqlite3_column_int(res, 3);
+        vf2->mood = sqlite3_column_int(res, 4);
+        vf2->verbid = sqlite3_column_int(res, 5);
+        lastFormID = sqlite3_column_int(res, 6);
+        
+        if (stepsAway(vf1, vf2) == 2/*fix me: change to variable*/ && !mpToMp(vf1, vf2))
+        {
+            break;
+        }
+        
+    }
+    return 1;
 }
 
 /*
@@ -1468,7 +1529,22 @@ bool dbInit(const char *path)
     
     //"DROP TABLE IF EXISTS games; DROP TABLE IF EXISTS verbseq;
     
-    char *sql = "CREATE TABLE IF NOT EXISTS games (" \
+    //DROP TABLE IF EXISTS verbforms;
+    char *sql =  "CREATE TABLE IF NOT EXISTS verbforms (" \
+    "formid INTEGER PRIMARY KEY NOT NULL, " \
+    "lastSeen INTEGER NOT NULL, " \
+    "difficulty INT1 NOT NULL, " \
+    "defaultDifficulty INT1 NOT NULL, " \
+    "person INT1 NOT NULL, " \
+    "number INT1 NOT NULL, " \
+    "tense INT1 NOT NULL, " \
+    "voice INT1 NOT NULL, " \
+    "mood INT1 NOT NULL, " \
+    "verbid INT NOT NULL " \
+    "); " \
+    
+    
+    "CREATE TABLE IF NOT EXISTS games (" \
     "gameid INTEGER PRIMARY KEY NOT NULL, " \
     "timest INT NOT NULL, " \
     "score INT NOT NULL, " \
@@ -1499,6 +1575,7 @@ bool dbInit(const char *path)
     {
         fprintf(stderr, "SQL error: %s\n", zErrMsg);
         sqlite3_free(zErrMsg);
+        return false;
     }
     /*
      rc = sqlite3_exec(db, "INSERT INTO abc VALUES (1);", NULL, NULL, &zErrMsg);
@@ -1568,7 +1645,16 @@ bool setHeadAnswer(bool correct, char *givenAnswer, const char *elapsedTime, Ver
         int rc = sqlite3_exec(db, sqlitePrepquery, 0, 0, &zErrMsg);
         if( rc != SQLITE_OK )
         {
-            fprintf(stderr, "SQL error: %s\n", zErrMsg);
+            fprintf(stderr, "SQL1 error: %s\n", zErrMsg);
+            sqlite3_free(zErrMsg);
+        }
+        
+        snprintf(sqlitePrepquery, SQLITEPREPQUERYLEN, " UPDATE verbforms SET lastSeen=datetime('now') WHERE formid=%d;", lastFormID);
+        //char *zErrMsg = 0;
+        rc = sqlite3_exec(db, sqlitePrepquery, 0, 0, &zErrMsg);
+        if( rc != SQLITE_OK )
+        {
+            fprintf(stderr, "SQL2 error: %s\n", zErrMsg);
             sqlite3_free(zErrMsg);
         }
         //printf("Insert: %d %s\n%s\n", rc, err,sqlitePrepquery);
@@ -1603,6 +1689,36 @@ void updateGameScore(long gameid, int score, int lives)
     {
         fprintf(stderr, "SQL error: %s\n", zErrMsg);
         sqlite3_free(zErrMsg);
+    }
+}
+
+void insertDB(int formid, VerbFormD *vf, sqlite3_stmt *stmt)
+{
+    //char *zErrMsg = 0;
+    
+    if (db)
+    {
+        //sqlite3_bind_int(stmt, 1, formid); /* 1 */
+        //sqlite3_bind_int(stmt, 1, 0); /* 2 lastSeen */
+        sqlite3_bind_int(stmt, 1, 0); /* 3 difficulty */
+        sqlite3_bind_int(stmt, 2, 0); /* 3 default difficulty */
+        sqlite3_bind_int(stmt, 3, vf->person); /* 4 */
+        sqlite3_bind_int(stmt, 4, vf->number); /* 5 */
+        sqlite3_bind_int(stmt, 5, vf->tense); /* 6 */
+        sqlite3_bind_int(stmt, 6, vf->voice); /* 7 */
+        sqlite3_bind_int(stmt, 7, vf->mood); /* 8 */
+        sqlite3_bind_int(stmt, 8, vf->verbid); /* 9 */
+
+        int rc = sqlite3_step(stmt);
+        
+        printf("insert %d, %d, %d, %d, %d, %d\n", vf->person, vf->number, vf->tense, vf->voice, vf->mood, vf->verbid);
+        
+        if (rc != SQLITE_DONE) {
+            printf("ERROR inserting data: %d, %s\n", formid, sqlite3_errmsg(db));
+            return;
+        }
+        sqlite3_clear_bindings(stmt);
+        sqlite3_reset(stmt);
     }
 }
 

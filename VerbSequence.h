@@ -132,6 +132,7 @@ bool dbInit(const char *path);
 int nextVerbSeq(VerbFormC *vf1, VerbFormC *vf2, VerbSeqOptions *vso);
 int nextVerbSeq2(VerbFormD *vf1, VerbFormD *vf2, VerbSeqOptions *vso1);
 int nextVerbSeqCustom(VerbFormD *vf1, VerbFormD *vf2);
+int nextVerbSeqCustomDB(VerbFormD *vf1, VerbFormD *vf2);
 
 void resetVerbSeq(VerbSeqOptions *opt);
 void changeFormByDegrees(VerbFormC *verbform, int degrees);
