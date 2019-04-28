@@ -31,11 +31,9 @@ void setOptionsxx(const int *persons, const int numPersons, const int *numbers, 
     opt.shuffle = shuffle;
     opt.repsPerVerb = (unsigned char) repsPerVerb;
     
-    buildSequence(&opt);
-    
     printf("here set options");
 }
-
+/*
 void setOptions()
 {
     swiftLayerOptions.startOnFirstSing = false;
@@ -60,6 +58,7 @@ void externalSetUnits(const char *unitStr)
     }
     swiftLayerOptions.numUnits = i;
 }
+*/
 
 int nextVS(int *seq, VerbFormD *vf1, VerbFormD *vf2)
 {
@@ -88,7 +87,7 @@ bool checkVFResultNoSave(UCS2 *expected, int expectedLen, UCS2 *entered, int ent
     
     return a;
 }
-
+/*
 void swiftResetVerbSeq()
 {
     swiftLayerOptions.isHCGame = true;
@@ -127,3 +126,4 @@ void swiftResetVerbSeq()
     
     //resetVerbSeq(&swiftLayerOptions);
 }
+*/
