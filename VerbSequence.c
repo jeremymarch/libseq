@@ -231,33 +231,64 @@ bool mpToMp(VerbFormD *vf1, VerbFormD *vf2)
     return false;
 }
 
+void getLastSeen(VerbFormD *vf1)
+{
+    sqlite3_stmt *res;
+    char *sql = "SELECT person,number,tense,voice,mood,verbid FROM verbforms WHERE verbid= ?1 ORDER BY lastSeen DESC LIMIT 1;";
+    int rc = sqlite3_prepare_v2(db, sql, -1, &res, NULL);
+    if (rc == SQLITE_OK) {
+        sqlite3_bind_int(res, 1, vf1->verbid);
+    } else {
+        fprintf(stderr, "Failed to execute statement: %s\n", sqlite3_errmsg(db));
+        vf1->person = 0;
+        vf1->number = 0;
+        vf1->tense = 0;
+        vf1->voice = 0;
+        vf1->mood = 0;
+        //sqlite3_finalize(res); //not needed if prepare fails, though no harm
+        return;
+    }
+    
+    if ( sqlite3_step(res) == SQLITE_ROW )
+    {
+        vf1->person = sqlite3_column_int(res, 0);
+        vf1->number = sqlite3_column_int(res, 1);
+        vf1->tense = sqlite3_column_int(res, 2);
+        vf1->voice = sqlite3_column_int(res, 3);
+        vf1->mood = sqlite3_column_int(res, 4);
+    }
+    else
+    {
+        vf1->person = 0;
+        vf1->number = 0;
+        vf1->tense = 0;
+        vf1->voice = 0;
+        vf1->mood = 0;
+    }
+    sqlite3_finalize(res);
+}
+
 int nextVerbSeqCustomDB(VerbFormD *vf1, VerbFormD *vf2)
 {
     //char *err_msg = 0;
     sqlite3_stmt *res;
     
-    char *sql = "SELECT person,number,tense,voice,mood,verbid,formid FROM verbforms WHERE verbid= ?1 ORDER BY lastSeen ASC, RANDOM() LIMIT 40;";
+    char *sql = "SELECT person,number,tense,voice,mood,verbid,formid FROM verbforms WHERE verbid= ?1 ORDER BY lastSeen ASC, RANDOM() LIMIT 50;";
     int rc = sqlite3_prepare_v2(db, sql, -1, &res, NULL);
     if (rc == SQLITE_OK) {
-        sqlite3_bind_int(res, 1, 0);
+        sqlite3_bind_int(res, 1, vf1->verbid);
     } else {
         fprintf(stderr, "Failed to execute statement: %s\n", sqlite3_errmsg(db));
         return 0;
     }
     
+    if (vf1->person == 3)//unset
+    {
+        getLastSeen(vf1); //set first form to last seen
+    }
+
     while ( sqlite3_step(res) == SQLITE_ROW )
     {
-        if (vf1->verbid < 0)
-        {
-            vf1->person = sqlite3_column_int(res, 0);
-            vf1->number = sqlite3_column_int(res, 1);
-            vf1->tense = sqlite3_column_int(res, 2);
-            vf1->voice = sqlite3_column_int(res, 3);
-            vf1->mood = sqlite3_column_int(res, 4);
-            vf1->verbid = sqlite3_column_int(res, 5);
-            continue;
-        }
-        
         vf2->person = sqlite3_column_int(res, 0);
         vf2->number = sqlite3_column_int(res, 1);
         vf2->tense = sqlite3_column_int(res, 2);
@@ -272,6 +303,7 @@ int nextVerbSeqCustomDB(VerbFormD *vf1, VerbFormD *vf2)
         }
         
     }
+    sqlite3_finalize(res);
     return 1;
 }
 
