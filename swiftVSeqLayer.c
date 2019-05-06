@@ -62,12 +62,12 @@ void externalSetUnits(const char *unitStr)
 
 int nextVS(int *seq, VerbFormD *vf1, VerbFormD *vf2)
 {
-    fprintf(stdout, "SWIFT LAYER1\n\n");
+    //fprintf(stdout, "SWIFT LAYER1\n\n");
     //int a = nextVerbSeq2(vf1, vf2, &swiftLayerOptions);
     int a = nextVerbSeqCustomDB(vf1, vf2);
     //int a = nextVerbSeqCustom(vf1, vf2);
     *seq = swiftLayerOptions.verbSeq;
-    fprintf(stdout, "SWIFT LAYER2\n\n");
+    //fprintf(stdout, "SWIFT LAYER2\n\n");
     return a;
 }
 
