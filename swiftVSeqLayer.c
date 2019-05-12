@@ -11,23 +11,24 @@
 #include "VerbSequence.h"
 
 VerbSeqOptions swiftLayerOptions; //this is the global options for the app.
+extern VerbSeqOptionsNew opt; //global options
 
 void setOptionsxx(const int *persons, const int numPersons, const int *numbers, const int numNumbers, const int *tenses, const int numTenses, const int *voices, const int numVoices, const int *moods, const int numMoods, const int *verbs, const int numVerbs, bool shuffle, int repsPerVerb, int topUnit)
 {
-    VerbSeqOptions opt;
-    memmove(opt.seqOptions.persons, persons, numPersons*(sizeof(opt.seqOptions.persons[0])));
-    opt.seqOptions.numPerson = numPersons;
-    memmove(opt.seqOptions.numbers, numbers, numNumbers*(sizeof(opt.seqOptions.numbers[0])));
-    opt.seqOptions.numNumbers = numNumbers;
-    memmove(opt.seqOptions.tenses, tenses, numTenses*(sizeof(opt.seqOptions.tenses[0])));
-    opt.seqOptions.numTense = numTenses;
-    memmove(opt.seqOptions.voices, voices, numVoices*(sizeof(opt.seqOptions.voices[0])));
-    opt.seqOptions.numVoice = numVoices;
-    memmove(opt.seqOptions.moods, moods, numMoods*(sizeof(opt.seqOptions.moods[0])));
-    opt.seqOptions.numMood = numMoods;
-    memmove(opt.seqOptions.verbs, verbs, numVerbs*(sizeof(opt.seqOptions.verbs[0])));
-    opt.seqOptions.numVerbs = numVerbs;
-    
+    //VerbSeqOptions opt;
+    memmove(opt.persons, persons, numPersons*(sizeof(opt.persons[0])));
+    opt.numPerson = numPersons;
+    memmove(opt.numbers, numbers, numNumbers*(sizeof(opt.numbers[0])));
+    opt.numNumbers = numNumbers;
+    memmove(opt.tenses, tenses, numTenses*(sizeof(opt.tenses[0])));
+    opt.numTense = numTenses;
+    memmove(opt.voices, voices, numVoices*(sizeof(opt.voices[0])));
+    opt.numVoice = numVoices;
+    memmove(opt.moods, moods, numMoods*(sizeof(opt.moods[0])));
+    opt.numMood = numMoods;
+    //memmove(opt.verbs, verbs, numVerbs*(sizeof(opt.verbs[0])));
+    //opt.numVerbs = numVerbs;
+    opt.topUnit = topUnit;
     opt.shuffle = shuffle;
     opt.repsPerVerb = (unsigned char) repsPerVerb;
     

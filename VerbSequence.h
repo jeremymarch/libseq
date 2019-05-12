@@ -98,6 +98,7 @@ typedef struct vsoNew {
     int voices[3];
     int moods[4];
     int *verbs;
+    int topUnit;
 } VerbSeqOptionsNew;
 
 typedef struct vso {

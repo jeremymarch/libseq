@@ -37,6 +37,8 @@ int sqliteTableCount(char *tbl_name);
 DataFormat *hcdata = NULL;
 size_t sizeInBytes = 0;
 
+VerbSeqOptionsNew opt; //global options
+
 char sqlitePrepquery[SQLITEPREPQUERYLEN];
 sqlite3_stmt *statement;
 sqlite3_stmt *statement2;
@@ -273,7 +275,7 @@ int nextVerbSeqCustomDB(VerbFormD *vf1, VerbFormD *vf2)
     //char *err_msg = 0;
     sqlite3_stmt *res;
     
-    char *sql = "SELECT person,number,tense,voice,mood,verbid,formid FROM verbforms WHERE verbid= ?1 ORDER BY lastSeen ASC, RANDOM() LIMIT 50;";
+    char *sql = "SELECT person,number,tense,voice,mood,verbid,formid FROM verbforms WHERE verbid= ?1 ORDER BY lastSeen ASC, RANDOM();";
     int rc = sqlite3_prepare_v2(db, sql, -1, &res, NULL);
     if (rc == SQLITE_OK) {
         sqlite3_bind_int(res, 1, vf1->verbid);
@@ -297,10 +299,11 @@ int nextVerbSeqCustomDB(VerbFormD *vf1, VerbFormD *vf2)
         vf2->verbid = sqlite3_column_int(res, 5);
         lastFormID = sqlite3_column_int(res, 6);
         
-        if (stepsAway(vf1, vf2) == 2/*fix me: change to variable*/ && !mpToMp(vf1, vf2))
+        if (stepsAway(vf1, vf2) == 2/*fix me: change to variable*/ && !mpToMp(vf1, vf2) && isValidFormForUnitD(vf2, opt.topUnit))
         {
             break;
         }
+        fprintf(stderr, "top unit: %d\n", opt.topUnit);
         
     }
     sqlite3_finalize(res);
@@ -426,22 +429,26 @@ bool isValidFormForUnit(VerbFormC *vf, int unit)
 {
     if (unit <= 2)
     {
+        //2 and under active indicative and not perfect or pluperfect
         if (vf->tense == PERFECT || vf->tense == PLUPERFECT || vf->voice != ACTIVE || vf->mood != INDICATIVE)
             return false;
     }
     else if (unit <= 4)
     {
-        if (vf->voice != ACTIVE || vf->mood == IMPERATIVE)
+        //4 and under must be active, no imperatives
+        if (vf->voice != ACTIVE || vf->mood == IMPERATIVE || (vf->tense == FUTURE && vf->mood == OPTATIVE))
             return false;
     }
     else if (unit <= 5)
     {
-        if (vf->voice == MIDDLE || vf->mood == IMPERATIVE)
+        //5 and under can't be middle, no imperatives
+        if (vf->voice == MIDDLE || vf->mood == IMPERATIVE || (vf->tense == FUTURE && vf->mood == OPTATIVE))
             return false;
     }
-    else if (unit <= 7)
+    else if (unit <= 10)
     {
-        if (vf->mood == IMPERATIVE)
+        //10 and under no imperatives
+        if (vf->mood == IMPERATIVE || (vf->tense == FUTURE && vf->mood == OPTATIVE))
             return false;
     } /* I don't think we need this
     else if (unit <= 11)
@@ -450,11 +457,13 @@ bool isValidFormForUnit(VerbFormC *vf, int unit)
     } */
     else if (unit <= 12)
     {
-        if ((utf8HasSuffix(vf->verb->present, "μι") && vf->tense == AORIST) || (utf8HasSuffix(vf->verb->present, "στημι") && (vf->tense == AORIST || vf->tense == PERFECT || vf->tense == PLUPERFECT)))
+        //12 and under no aorists of mi verbs or perf/plup of isthmi
+        if ((utf8HasSuffix(vf->verb->present, "μι") && vf->tense == AORIST) || (utf8HasSuffix(vf->verb->present, "στημι") && (vf->tense == AORIST || vf->tense == PERFECT || vf->tense == PLUPERFECT)) || (vf->tense == FUTURE && vf->mood == OPTATIVE))
             return false;
     }
-    else if (unit <= 16)
+    else if (unit <= 15)
     {
+        //15 and under no future optative
         if (vf->tense == FUTURE && vf->mood == OPTATIVE)
             return false;
     }
