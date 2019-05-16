@@ -303,7 +303,7 @@ int nextVerbSeqCustomDB(VerbFormD *vf1, VerbFormD *vf2)
         {
             break;
         }
-        fprintf(stderr, "top unit: %d\n", opt.topUnit);
+        //fprintf(stderr, "top unit: %d\n", opt.topUnit);
         
     }
     sqlite3_finalize(res);
