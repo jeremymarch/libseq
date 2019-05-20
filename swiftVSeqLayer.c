@@ -13,7 +13,7 @@
 VerbSeqOptions swiftLayerOptions; //this is the global options for the app.
 extern VerbSeqOptionsNew opt; //global options
 
-void setOptionsxx(const int *persons, const int numPersons, const int *numbers, const int numNumbers, const int *tenses, const int numTenses, const int *voices, const int numVoices, const int *moods, const int numMoods, const int *verbs, const int numVerbs, bool shuffle, int repsPerVerb, int topUnit)
+void setOptionsxx(const int *persons, const int numPersons, const int *numbers, const int numNumbers, const int *tenses, const int numTenses, const int *voices, const int numVoices, const int *moods, const int numMoods, const int *verbs, const int numVerbs, bool shuffle, int repsPerVerb, int topUnit, bool isGame)
 {
     //VerbSeqOptions opt;
     memmove(opt.persons, persons, numPersons*(sizeof(opt.persons[0])));
@@ -28,9 +28,12 @@ void setOptionsxx(const int *persons, const int numPersons, const int *numbers, 
     opt.numMood = numMoods;
     //memmove(opt.verbs, verbs, numVerbs*(sizeof(opt.verbs[0])));
     //opt.numVerbs = numVerbs;
+    opt.isHCGame = isGame;
     opt.topUnit = topUnit;
     opt.shuffle = shuffle;
     opt.repsPerVerb = (unsigned char) repsPerVerb;
+    opt.repNum = 0;
+    opt.gameId = GAME_INCIPIENT; //this starts a new game
     
     printf("here set options");
 }
@@ -92,7 +95,7 @@ bool checkVFResultNoSave(UCS2 *expected, int expectedLen, UCS2 *entered, int ent
 void swiftResetVerbSeq()
 {
     swiftLayerOptions.isHCGame = true;
-    swiftLayerOptions.gameId = GAME_INSIPIENT;
+    swiftLayerOptions.gameId = GAME_INCIPIENT;
     swiftLayerOptions.startOnFirstSing = false;
     swiftLayerOptions.degreesToChange = 2;
     swiftLayerOptions.practiceVerbID = -1;//4;

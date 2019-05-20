@@ -15,7 +15,7 @@
 
 enum {
     GAME_INVALID = -1,
-    GAME_INSIPIENT = 0, //A game which is started, but not yet in the db.  We add it to the db when first item is answered
+    GAME_INCIPIENT = 0, //A game which is started, but not yet in the db.  We add it to the db when first item is answered
     GAME_PRACTICE = 1 //the practice "game" has an id of 1.
 };
 
@@ -72,6 +72,7 @@ typedef struct vsoNew {
     bool isHCGame; //else is practice
     bool shuffle;
     int repsPerVerb;
+    int repNum;
     int degreesToChange;
 
     //int practiceVerbID; //to just practice on one verb
@@ -148,6 +149,8 @@ Verb *getRandomVerbFromUnit(int *units, int numUnits);
 
 Ending *getRandomEnding(int *units, int numUnits);
 void getRandomEndingAsString(int *units, int numUnits, char *buffer, int bufferLen);
+
+void startNewGame(bool isGame);
 
 #endif /* VerbSequence_h */
 

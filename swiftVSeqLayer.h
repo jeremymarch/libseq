@@ -20,7 +20,7 @@ bool checkVFResultNoSave(UCS2 *expected, int expectedLen, UCS2 *entered, int ent
 
 void swiftResetVerbSeq(void);
 
-void setOptionsxx(const int *persons, const int numPersons, const int *numbers, const int numNumbers, const int *tenses, const int numTenses, const int *voices, const int numVoices, const int *moods, const int numMoods, const int *verbs, const int numVerbs, bool shuffle, int repsPerVerb, int topUnit);
+void setOptionsxx(const int *persons, const int numPersons, const int *numbers, const int numNumbers, const int *tenses, const int numTenses, const int *voices, const int numVoices, const int *moods, const int numMoods, const int *verbs, const int numVerbs, bool shuffle, int repsPerVerb, int topUnit, bool isGame);
 
 
 #endif /* swiftVSeqLayer_h */

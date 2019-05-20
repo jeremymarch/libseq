@@ -24,7 +24,7 @@
 #define SQLITEPREPQUERYLEN 1024
 
 //these are assigned to globalGameID.
-//its practice, insipient, or 1-n = a real saved game
+//its practice, incipient, or 1-n = a real saved game
 
 void copyVFD(VerbFormD *fromVF, VerbFormD *toVF);
 void copyVFC(VerbFormC *fromVF, VerbFormC *toVF);
@@ -103,7 +103,7 @@ int findVerbIndexByPointer(Verb *v)
 }
 
 void randomAlternative(char *s, int *offset);
-void addNewGameToDB(int topUnit, long *gameid);
+void addNewGameToDB(int topUnit, long *gameid, bool isGame);
 void updateGameScore(long gameid, int score, int lives);
 bool setHeadAnswer(bool correct, char *givenAnswer, const char *elapsedTime, VerbSeqOptions *vso);
 
@@ -143,6 +143,10 @@ int callback(void *NotUsed, int argc, char **argv,
     return 0;
 }
 
+void startNewGame(bool isGame)
+{
+    opt.gameId = GAME_INCIPIENT; //this starts a new game
+}
 
 bool compareFormsCheckMFRecordResult(UCS2 *expected, int expectedLen, UCS2 *entered, int enteredLen, bool MFPressed, const char *elapsedTime, VerbSeqOptions *opt)
 {
@@ -151,33 +155,32 @@ bool compareFormsCheckMFRecordResult(UCS2 *expected, int expectedLen, UCS2 *ente
     
     ucs2_to_utf8_string(entered, enteredLen, (unsigned char*)buffer);
     
-    if(opt->gameId == GAME_INSIPIENT)
+    if(opt->gameId == GAME_INCIPIENT)
     {
-        long localGameId = GAME_INSIPIENT;
-        addNewGameToDB(highestUnit, &localGameId);
+        long localGameId = GAME_INCIPIENT;
+        addNewGameToDB(highestUnit, &localGameId, opt->isHCGame);
         opt->gameId = localGameId;
     }
     
-    if (opt->gameId > 1) //is a real game, not practice
+    if (opt->isHCGame) //is a real game, not practice
     {
         if (opt->score < 0) //this should always be false
+        {
             opt->score = 0;
+        }
         
         if (isCorrect)
         {
-            if (opt->verbSeq >= HC_VERBS_PER_SET)
-                opt->score += (pointsPerForm * bonusPointsMultiple); //add bonus here
-            else
+            //if (opt->verbSeq >= HC_VERBS_PER_SET)
+            //    opt->score += (pointsPerForm * bonusPointsMultiple); //add bonus here
+            //else
                 opt->score += pointsPerForm;
-            fprintf(stderr, "SScore: %i\n", opt->score);
         }
         else
         {
-            if (opt->gameId > -1)
-                opt->lives -= 1;
-            else
-                opt->lives = -1;
+            opt->lives -= 1;
         }
+        fprintf(stderr, "Score: %i, Lives: %i\n", opt->score, opt->lives);
         
         updateGameScore(opt->gameId, opt->score, opt->lives);
     }
@@ -251,6 +254,7 @@ void getLastSeen(VerbFormD *vf1)
         return;
     }
     
+    //this should be sure starting form is valid for topunit
     if ( sqlite3_step(res) == SQLITE_ROW )
     {
         vf1->person = sqlite3_column_int(res, 0);
@@ -789,9 +793,9 @@ bool dbInit(const char *path)
     "elapsedtime VARCHAR(255), " \
     "incorrectAns VARCHAR(255), " \
     "FOREIGN KEY (gameid) REFERENCES games(gameid) " \
-    "); " \
+    "); ";
     
-    "INSERT OR IGNORE INTO games VALUES (1,0,-1,0,0);"; //This is the Practice Game
+    //"INSERT OR IGNORE INTO games VALUES (1,0,-1,0,0);"; //This is the Practice Game
     
     rc = sqlite3_exec(db, sql, NULL, NULL, &zErrMsg);
     if( rc != SQLITE_OK )
@@ -892,7 +896,8 @@ bool setupVerbFormsTable(void)
     "voice INT1 NOT NULL, " \
     "mood INT1 NOT NULL, " \
     "verbid INT NOT NULL " \
-    "); ";
+    "); " \
+    "CREATE INDEX verbididx ON verbforms(verbid);";
     
     int rc = sqlite3_exec(db, create, NULL, NULL, &zErrMsg);
     if( rc != SQLITE_OK )
@@ -962,6 +967,7 @@ bool setHeadAnswer(bool correct, char *givenAnswer, const char *elapsedTime, Ver
         {
             return false;
         }
+        //changd this to only use lastformid
         snprintf(sqlitePrepquery, SQLITEPREPQUERYLEN, "INSERT INTO verbseq VALUES (NULL,%ld,%ld,%d,%d,%d,%d,%d,%d,%d,'%s','%s');", time(NULL), vso->gameId, lastVF.person, lastVF.number, lastVF.tense, lastVF.voice, lastVF.mood, lastVF.verbid, correct, elapsedTime, givenAnswer);
         char *zErrMsg = 0;
         int rc = sqlite3_exec(db, sqlitePrepquery, 0, 0, &zErrMsg);
@@ -984,11 +990,17 @@ bool setHeadAnswer(bool correct, char *givenAnswer, const char *elapsedTime, Ver
     return true;
 }
 
-void addNewGameToDB(int topUnit, long *gameid)
+void addNewGameToDB(int topUnit, long *gameid, bool isGame)
 {
     char *zErrMsg = 0;
     
-    snprintf(sqlitePrepquery, SQLITEPREPQUERYLEN, "INSERT INTO games (timest,score,topUnit,lives) VALUES (%li,0, %d,3);", time(NULL), topUnit);
+    int initialScore = 0;
+    if (!isGame)
+    {
+        initialScore = -1; //we identify practice by -1 score
+    }
+    
+    snprintf(sqlitePrepquery, SQLITEPREPQUERYLEN, "INSERT INTO games (timest,score,topUnit,lives) VALUES (%li,%d, %d,3);", time(NULL), initialScore, topUnit);
     int rc = sqlite3_exec(db, sqlitePrepquery, 0, 0, &zErrMsg);
     if( rc != SQLITE_OK )
     {
