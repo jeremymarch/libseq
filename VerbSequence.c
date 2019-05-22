@@ -887,7 +887,7 @@ bool setupVerbFormsTable(void)
     int formid = 1;
     char *zErrMsg = 0;
     
-    char *create = "BEGIN TRANSACTION; DROP TABLE IF EXISTS verbforms; " \
+    char *create = "BEGIN; DROP TABLE IF EXISTS verbforms; " \
     "CREATE TABLE IF NOT EXISTS verbforms (" \
     "formid INTEGER PRIMARY KEY NOT NULL, " \
     "lastSeen INTEGER NOT NULL, " \
