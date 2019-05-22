@@ -312,6 +312,7 @@ int nextVerbSeqCustomDB(VerbFormD *vf1, VerbFormD *vf2)
         //fprintf(stderr, "top unit: %d\n", opt.topUnit);
         
     }
+    copyVFD(vf2, &lastVF);
     sqlite3_finalize(res);
     return 1;
 }
@@ -886,7 +887,7 @@ bool setupVerbFormsTable(void)
     int formid = 1;
     char *zErrMsg = 0;
     
-    char *create = "DROP TABLE IF EXISTS verbforms; " \
+    char *create = "BEGIN TRANSACTION; DROP TABLE IF EXISTS verbforms; " \
     "CREATE TABLE IF NOT EXISTS verbforms (" \
     "formid INTEGER PRIMARY KEY NOT NULL, " \
     "lastSeen INTEGER NOT NULL, " \
@@ -954,7 +955,17 @@ bool setupVerbFormsTable(void)
             }
         }
     }
-    printf("done creating verbforms table\n");
+    rc = sqlite3_exec(db, "COMMIT", NULL, NULL, &zErrMsg);
+    if( rc != SQLITE_OK )
+    {
+        fprintf(stderr, "COMMIT verbforms table SQL error: %s\n", zErrMsg);
+        sqlite3_free(zErrMsg);
+        return false;
+    }
+    else
+    {
+        printf("done creating verbforms table\n");
+    }
     sqlite3_finalize(stmt);
     
     return true;
