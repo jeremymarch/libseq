@@ -105,7 +105,7 @@ int findVerbIndexByPointer(Verb *v)
 void randomAlternative(char *s, int *offset);
 void addNewGameToDB(int topUnit, long *gameid, bool isGame);
 void updateGameScore(long gameid, int score, int lives);
-bool setHeadAnswer(bool correct, char *givenAnswer, const char *elapsedTime, VerbSeqOptions *vso);
+bool setHeadAnswer(bool correct, char *givenAnswer, const char *elapsedTime, VerbSeqOptionsNew *vso);
 
 int getVerbSeqCallback(void *NotUsed, int argc, char **argv,
              char **azColName) {
@@ -148,15 +148,17 @@ void startNewGame(bool isGame)
     opt.gameId = GAME_INCIPIENT; //this starts a new game
 }
 
-bool compareFormsCheckMFRecordResult(UCS2 *expected, int expectedLen, UCS2 *entered, int enteredLen, bool MFPressed, const char *elapsedTime, VerbSeqOptions *opt)
+bool compareFormsCheckMFRecordResult(UCS2 *expected, int expectedLen, UCS2 *entered, int enteredLen, bool MFPressed, const char *elapsedTime, VerbSeqOptionsNew *opt)
 {
     char buffer[200];
     bool isCorrect = compareFormsCheckMF(expected, expectedLen, entered, enteredLen, MFPressed);
     
     ucs2_to_utf8_string(entered, enteredLen, (unsigned char*)buffer);
     
+    printf("gameid: %d\n", opt->gameId);
     if(opt->gameId == GAME_INCIPIENT)
     {
+        printf("is new gameid: %d, %d\n", opt->gameId,opt->isHCGame);
         long localGameId = GAME_INCIPIENT;
         addNewGameToDB(highestUnit, &localGameId, opt->isHCGame);
         opt->gameId = localGameId;
@@ -193,7 +195,7 @@ bool compareFormsCheckMFRecordResult(UCS2 *expected, int expectedLen, UCS2 *ente
 }
 
 int currentVerb = 0;
-void resetVerbSeq(VerbSeqOptions *opt)
+void resetVerbSeq(VerbSeqOptionsNew *opt)
 {
     opt->gameId = GAME_INVALID;
     opt->score = -1;
@@ -958,7 +960,7 @@ bool setupVerbFormsTable(void)
     return true;
 }
 
-bool setHeadAnswer(bool correct, char *givenAnswer, const char *elapsedTime, VerbSeqOptions *vso)
+bool setHeadAnswer(bool correct, char *givenAnswer, const char *elapsedTime, VerbSeqOptionsNew *vso)
 {
     if (db)
     {
@@ -985,7 +987,7 @@ bool setHeadAnswer(bool correct, char *givenAnswer, const char *elapsedTime, Ver
             fprintf(stderr, "SQL2 error: %s\n", zErrMsg);
             sqlite3_free(zErrMsg);
         }
-        //printf("Insert: %d %s\n%s\n", rc, err,sqlitePrepquery);
+        printf("Insert into gameid: %d\n", vso->gameId);
     }
     return true;
 }
@@ -1010,6 +1012,7 @@ void addNewGameToDB(int topUnit, long *gameid, bool isGame)
     else
     {
         *gameid = sqlite3_last_insert_rowid(db);
+        printf("new id: %d", *gameid);
     }
 }
 

@@ -10,6 +10,7 @@
 #define VerbSequence_h
 
 #include <stdio.h>
+//https://stackoverflow.com/questions/2093069/xcode-how-to-include-c-library-and-header-file-to-cocoa-project
 #include <libmorph.h>
 #include <GreekForms.h>
 
@@ -123,7 +124,7 @@ typedef struct vso {
 } VerbSeqOptions;
 
 void externalSetUnits(const char *units);
-bool compareFormsCheckMFRecordResult(UCS2 *expected, int expectedLen, UCS2 *given, int givenLen, bool MFPressed, const char *elapsedTime, VerbSeqOptions *opt);
+bool compareFormsCheckMFRecordResult(UCS2 *expected, int expectedLen, UCS2 *given, int givenLen, bool MFPressed, const char *elapsedTime, VerbSeqOptionsNew *opt);
 //void closeDataFile();
 //void syncDataFile();
 
@@ -136,7 +137,7 @@ int nextVerbSeq2(VerbFormD *vf1, VerbFormD *vf2, VerbSeqOptions *vso1);
 int nextVerbSeqCustom(VerbFormD *vf1, VerbFormD *vf2);
 int nextVerbSeqCustomDB(VerbFormD *vf1, VerbFormD *vf2);
 
-void resetVerbSeq(VerbSeqOptions *opt);
+void resetVerbSeq(VerbSeqOptionsNew *opt);
 void changeFormByDegrees(VerbFormC *verbform, int degrees);
 void generateForm(VerbFormC *verbform);
 void getDistractorsForChange(VerbFormC *orig, VerbFormC *new, int numDistractors, char *buffer);

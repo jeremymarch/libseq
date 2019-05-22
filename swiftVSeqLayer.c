@@ -35,7 +35,7 @@ void setOptionsxx(const int *persons, const int numPersons, const int *numbers, 
     opt.repNum = 0;
     opt.gameId = GAME_INCIPIENT; //this starts a new game
     
-    printf("here set options");
+    printf("here set options. is game: %d\n", isGame);
 }
 /*
 void setOptions()
@@ -77,7 +77,7 @@ int nextVS(int *seq, VerbFormD *vf1, VerbFormD *vf2)
 
 bool checkVFResult(UCS2 *expected, int expectedLen, UCS2 *entered, int enteredLen, bool MFPressed, const char *elapsedTime, int *score, int *lives)
 {
-    bool a = compareFormsCheckMFRecordResult(expected, expectedLen, entered, enteredLen, MFPressed, elapsedTime, &swiftLayerOptions);
+    bool a = compareFormsCheckMFRecordResult(expected, expectedLen, entered, enteredLen, MFPressed, elapsedTime, &opt);
     
     *lives = swiftLayerOptions.lives;
     *score = swiftLayerOptions.score;
