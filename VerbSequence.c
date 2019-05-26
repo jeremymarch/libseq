@@ -155,7 +155,6 @@ bool compareFormsCheckMFRecordResult(UCS2 *expected, int expectedLen, UCS2 *ente
     
     ucs2_to_utf8_string(entered, enteredLen, (unsigned char*)buffer);
     
-    printf("gameid: %d\n", opt->gameId);
     if(opt->gameId == GAME_INCIPIENT)
     {
         printf("is new gameid: %d, %d\n", opt->gameId,opt->isHCGame);
@@ -166,21 +165,26 @@ bool compareFormsCheckMFRecordResult(UCS2 *expected, int expectedLen, UCS2 *ente
     
     if (opt->isHCGame) //is a real game, not practice
     {
-        if (opt->score < 0) //this should always be false
+        if (opt->score < 0)
         {
             opt->score = 0;
         }
         
         if (isCorrect)
         {
-            //if (opt->verbSeq >= HC_VERBS_PER_SET)
-            //    opt->score += (pointsPerForm * bonusPointsMultiple); //add bonus here
-            //else
+            if ( opt->repNum >= opt->repsPerVerb ) //should never be greater than
+                opt->score += (pointsPerForm * bonusPointsMultiple); //add bonus here
+            else
                 opt->score += pointsPerForm;
         }
         else
         {
             opt->lives -= 1;
+            opt->repNum = -1; //to start with new verb
+            if ( opt->lives < 1 )
+            {
+                opt->state = STATE_GAMEOVER;
+            }
         }
         fprintf(stderr, "Score: %i, Lives: %i\n", opt->score, opt->lives);
         
@@ -195,16 +199,27 @@ bool compareFormsCheckMFRecordResult(UCS2 *expected, int expectedLen, UCS2 *ente
 }
 
 int currentVerb = 0;
-void resetVerbSeq(VerbSeqOptionsNew *opt)
+void resetVerbSeq(bool isGame)
 {
-    opt->gameId = GAME_INVALID;
-    opt->score = -1;
-    opt->lives = 3;
-    opt->lastAnswerCorrect = false;
-    opt->verbSeq = 99999;
-    opt->firstVerbSeq = true;
-    //buildSequence(opt);
-    currentVerb = 0;
+    opt.gameId = GAME_INCIPIENT;
+    if (isGame)
+    {
+        printf("reset game\n");
+        opt.score = -1;
+        opt.lives = 3;
+        opt.isHCGame = true;
+    }
+    else
+    {
+        printf("reset practice\n");
+        opt.score = -1;
+        opt.lives = -1;
+        opt.isHCGame = false;
+    }
+    opt.state = STATE_NEW;
+    opt.repNum = -1;
+    opt.lastAnswerCorrect = false;
+    opt.currentVerbIdx = 0;
 }
 
 void copyVFD(VerbFormD *fromVF, VerbFormD *toVF)
@@ -276,8 +291,116 @@ void getLastSeen(VerbFormD *vf1)
     sqlite3_finalize(res);
 }
 
+
+//https://www.geeksforgeeks.org/shuffle-a-given-array-using-fisher-yates-shuffle-algorithm/
+void swap (int *a, int *b)
+{
+    int temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+//or we could pic a random verb from first half of array.
+//then move last used verb to end of array
+
+
+//what if we had db of verbforms like this:
+//ω verb forms
+//μι verb forms where different
+//any interesting alternates, otherwise need to be asked freq.
+//then we don't ask same verb form for a different verb often.
+//we would get more variation
+//at max difficulty we would use different principal part for every change.
+
+//we want the last verbid to be last.
+void randomize ( int arr[], int arrayLen, int lastVerbID)
+{
+    // Use a different seed value so that we don't get same
+    // result each time we run this program
+    srand ( time(NULL) );
+    
+    // Start from the last element and swap one by one. We don't
+    // need to run for the first element that's why i > 0
+    for (int i = arrayLen-1; i > 0; i--)
+    {
+        // Pick a random index from 0 to i
+        int j = rand() % (i+1);
+        
+        // Swap arr[i] with the element at random index
+        swap(&arr[i], &arr[j]);
+    }
+}
+
 int nextVerbSeqCustomDB(VerbFormD *vf1, VerbFormD *vf2)
 {
+    if (opt.isHCGame && opt.lives < 1)
+    {
+        opt.state = STATE_GAMEOVER;
+        return opt.state;
+    }
+    
+    opt.state = STATE_NEW;
+    //assert(verbIDs.count > 0, "Error: getNext no verbIDs")
+    if (opt.numVerbs < 1)
+    {
+        opt.verbs[0] = 0;
+        opt.numVerbs = 1;
+    }
+    //printf("repnum: \(repNum), \(verbIDs.count)")
+    
+    if (opt.numVerbs == 1)
+    {
+        //fix me, if very first one check person for .unset to get given form?
+        //repNum += 1
+        vf1->verbid = opt.verbs[0];
+        opt.state = STATE_REP;
+    }
+    else
+    {
+        //are we at end and need to reshuffle?
+        if (opt.repNum >= opt.repsPerVerb && opt.currentVerbIdx >= opt.numVerbs - 1)
+        {
+            opt.repNum = -1; //reshuffle and restart
+        }
+        
+        //brand new or time to reshuffle
+        if (opt.repNum < 0)
+        {
+            //no need to shuffle if there are only two
+            if (opt.numVerbs > 2)
+            {
+                //we don't want to randomly get same verb twice in a row
+                //do {
+                randomize(opt.verbs, opt.numVerbs, vf1->verbid);
+                //} while (opt.verbs[0] == vf1->verbid);
+            }
+            opt.repNum = 1;
+            opt.currentVerbIdx = 0;
+            //givenForm.person = .unset; //reset
+            opt.state = STATE_NEW;
+        }
+        else if (opt.repNum >= opt.repsPerVerb) // maxRepsPerVerb
+        {
+            opt.currentVerbIdx += 1;
+            opt.repNum = 1;
+            //givenForm.person = .unset; //reset
+            opt.state = STATE_NEW;
+        }
+        else
+        {
+            //state = .rep????
+            opt.repNum += 1;
+            opt.state = STATE_REP;
+        }
+        vf1->verbid = opt.verbs[opt.currentVerbIdx];
+    }
+    printf("crep: %d, %d, %d\n", opt.repNum, opt.repsPerVerb, opt.state);
+    
+    if (opt.state != STATE_NEW)
+    {
+        copyVFD(vf2, vf1);
+    }
+    
     //char *err_msg = 0;
     sqlite3_stmt *res;
     
@@ -290,9 +413,10 @@ int nextVerbSeqCustomDB(VerbFormD *vf1, VerbFormD *vf2)
         return 0;
     }
     
-    if (vf1->person == 3)//unset
+    if (opt.state == STATE_NEW)//unset
     {
         getLastSeen(vf1); //set first form to last seen
+        printf("new verb\n");
     }
 
     while ( sqlite3_step(res) == SQLITE_ROW )
@@ -305,16 +429,16 @@ int nextVerbSeqCustomDB(VerbFormD *vf1, VerbFormD *vf2)
         vf2->verbid = sqlite3_column_int(res, 5);
         lastFormID = sqlite3_column_int(res, 6);
         
+        //fixme need to block dashes
         if (stepsAway(vf1, vf2) == 2/*fix me: change to variable*/ && !mpToMp(vf1, vf2) && isValidFormForUnitD(vf2, opt.topUnit))
         {
             break;
         }
         //fprintf(stderr, "top unit: %d\n", opt.topUnit);
-        
     }
     copyVFD(vf2, &lastVF);
     sqlite3_finalize(res);
-    return 1;
+    return opt.state;
 }
 
 /*

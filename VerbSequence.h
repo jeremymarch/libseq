@@ -15,6 +15,13 @@
 #include <GreekForms.h>
 
 enum {
+    STATE_ERROR = 0,
+    STATE_NEW,
+    STATE_REP,
+    STATE_GAMEOVER
+};
+
+enum {
     GAME_INVALID = -1,
     GAME_INCIPIENT = 0, //A game which is started, but not yet in the db.  We add it to the db when first item is answered
     GAME_PRACTICE = 1 //the practice "game" has an id of 1.
@@ -83,23 +90,23 @@ typedef struct vsoNew {
     int verbSeq;
     bool firstVerbSeq;
     bool lastAnswerCorrect;
+    int currentVerbIdx;
+    int state;
 
-    int numUnits;
-    int units[20];
-    
-    //SeqOptions
     int numPerson;
     int numNumbers;
     int numTense;
     int numVoice;
     int numMood;
     int numVerbs;
+    int numUnits;
     int persons[3];
     int numbers[2];
     int tenses[6];
     int voices[3];
     int moods[4];
-    int *verbs;
+    int verbs[NUM_VERBS];
+    int units[20];
     int topUnit;
 } VerbSeqOptionsNew;
 
@@ -137,7 +144,7 @@ int nextVerbSeq2(VerbFormD *vf1, VerbFormD *vf2, VerbSeqOptions *vso1);
 int nextVerbSeqCustom(VerbFormD *vf1, VerbFormD *vf2);
 int nextVerbSeqCustomDB(VerbFormD *vf1, VerbFormD *vf2);
 
-void resetVerbSeq(VerbSeqOptionsNew *opt);
+void resetVerbSeq(bool isGame);
 void changeFormByDegrees(VerbFormC *verbform, int degrees);
 void generateForm(VerbFormC *verbform);
 void getDistractorsForChange(VerbFormC *orig, VerbFormC *new, int numDistractors, char *buffer);

@@ -13,7 +13,7 @@
 VerbSeqOptions swiftLayerOptions; //this is the global options for the app.
 extern VerbSeqOptionsNew opt; //global options
 
-void setOptionsxx(const int *persons, const int numPersons, const int *numbers, const int numNumbers, const int *tenses, const int numTenses, const int *voices, const int numVoices, const int *moods, const int numMoods, const int *verbs, const int numVerbs, bool shuffle, int repsPerVerb, int topUnit, bool isGame)
+void setOptionsxx(const int *persons, const int numPersons, const int *numbers, const int numNumbers, const int *tenses, const int numTenses, const int *voices, const int numVoices, const int *moods, const int numMoods, const int *verbs, const int numVerbs, const int *units, const int numUnits, bool shuffle, int repsPerVerb, int topUnit, bool isGame)
 {
     //VerbSeqOptions opt;
     memmove(opt.persons, persons, numPersons*(sizeof(opt.persons[0])));
@@ -26,13 +26,21 @@ void setOptionsxx(const int *persons, const int numPersons, const int *numbers, 
     opt.numVoice = numVoices;
     memmove(opt.moods, moods, numMoods*(sizeof(opt.moods[0])));
     opt.numMood = numMoods;
-    //memmove(opt.verbs, verbs, numVerbs*(sizeof(opt.verbs[0])));
-    //opt.numVerbs = numVerbs;
+
+    memmove(opt.verbs, verbs, numVerbs*(sizeof(opt.verbs[0])));
+    opt.numVerbs = numVerbs;
+    memmove(opt.units, units, numUnits*(sizeof(opt.units[0])));
+    opt.numUnits = numUnits;
+    
     opt.isHCGame = isGame;
     opt.topUnit = topUnit;
     opt.shuffle = shuffle;
     opt.repsPerVerb = (unsigned char) repsPerVerb;
-    opt.repNum = 0;
+    opt.repNum = -1;
+    if (opt.isHCGame)
+    {
+        opt.lives = 3;
+    }
     opt.gameId = GAME_INCIPIENT; //this starts a new game
     
     printf("here set options. is game: %d\n", isGame);
@@ -70,19 +78,21 @@ int nextVS(int *seq, VerbFormD *vf1, VerbFormD *vf2)
     //int a = nextVerbSeq2(vf1, vf2, &swiftLayerOptions);
     int a = nextVerbSeqCustomDB(vf1, vf2);
     //int a = nextVerbSeqCustom(vf1, vf2);
-    *seq = swiftLayerOptions.verbSeq;
+    //*seq = swiftLayerOptions.verbSeq;
     //fprintf(stdout, "SWIFT LAYER2\n\n");
     return a;
 }
 
 bool checkVFResult(UCS2 *expected, int expectedLen, UCS2 *entered, int enteredLen, bool MFPressed, const char *elapsedTime, int *score, int *lives)
 {
-    bool a = compareFormsCheckMFRecordResult(expected, expectedLen, entered, enteredLen, MFPressed, elapsedTime, &opt);
+    bool isCorrect = compareFormsCheckMFRecordResult(expected, expectedLen, entered, enteredLen, MFPressed, elapsedTime, &opt);
     
-    *lives = swiftLayerOptions.lives;
-    *score = swiftLayerOptions.score;
+    *lives = opt.lives;
+    *score = opt.score;
     
-    return a;
+    printf("swiftc lives: %d\n", *lives);
+    
+    return isCorrect;
 }
 
 bool checkVFResultNoSave(UCS2 *expected, int expectedLen, UCS2 *entered, int enteredLen, bool MFPressed)
@@ -91,43 +101,3 @@ bool checkVFResultNoSave(UCS2 *expected, int expectedLen, UCS2 *entered, int ent
     
     return a;
 }
-/*
-void swiftResetVerbSeq()
-{
-    swiftLayerOptions.isHCGame = true;
-    swiftLayerOptions.gameId = GAME_INCIPIENT;
-    swiftLayerOptions.startOnFirstSing = false;
-    swiftLayerOptions.degreesToChange = 2;
-    swiftLayerOptions.practiceVerbID = -1;//4;
-    
-    swiftLayerOptions.seqOptions.persons[0] = 0;
-    swiftLayerOptions.seqOptions.persons[1] = 1;
-    swiftLayerOptions.seqOptions.persons[2] = 2;
-    swiftLayerOptions.seqOptions.numbers[0] = 0;
-    swiftLayerOptions.seqOptions.numbers[1] = 1;
-    swiftLayerOptions.seqOptions.tenses[0] = 0;
-    swiftLayerOptions.seqOptions.tenses[1] = 1;
-    swiftLayerOptions.seqOptions.tenses[2] = 2;
-    swiftLayerOptions.seqOptions.tenses[3] = 3;
-    swiftLayerOptions.seqOptions.tenses[4] = 4;
-    swiftLayerOptions.seqOptions.voices[0] = 0;
-    swiftLayerOptions.seqOptions.voices[1] = 1;
-    swiftLayerOptions.seqOptions.voices[2] = 2;
-    swiftLayerOptions.seqOptions.moods[0] = 3;
-    swiftLayerOptions.seqOptions.moods[1] = 1;
-    swiftLayerOptions.seqOptions.moods[2] = 2;
-    swiftLayerOptions.seqOptions.moods[3] = 3;
-    swiftLayerOptions.seqOptions.verbs[0] = 3;
-    
-    swiftLayerOptions.seqOptions.numPerson = 3;
-    swiftLayerOptions.seqOptions.numNumbers = 2;
-    swiftLayerOptions.seqOptions.numTense = 5;
-    swiftLayerOptions.seqOptions.numVoice = 3;
-    swiftLayerOptions.seqOptions.numMood = 1;
-    swiftLayerOptions.seqOptions.numVerbs = 1;
-    
-    externalSetUnits("2");
-    
-    //resetVerbSeq(&swiftLayerOptions);
-}
-*/
