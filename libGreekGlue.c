@@ -218,13 +218,13 @@ Java_com_philolog_hc_GreekVerb_compareFormsCheckMFRecordResult( JNIEnv* env, job
     fid = (*env)->GetFieldID(env,cls,"score","I");
     score = (*env)->GetIntField(env, thiz ,fid);
 
-    LOGE("Score before: %d", score);
+    LOGE("Score before: %d", opt.score);
 
     bool ret = compareFormsCheckMFRecordResult(expecteducs2, expecteducs2Len, givenucs2, givenucs2Len, MFP, elapsedTime, &opt);//, &score, &lives);
 
-    LOGE("Score after: %d", score);
+    LOGE("Score after: %d", opt.score);
 
-    (*env)->SetIntField(env, thiz ,fid, score);
+    (*env)->SetIntField(env, thiz ,fid, opt.score);
 
     (*env)->ReleaseStringUTFChars(env, elapsed, elapsedChar);
     (*env)->ReleaseStringUTFChars(env, given, givenChar);
