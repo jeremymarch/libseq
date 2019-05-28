@@ -73,104 +73,88 @@ void addVerbsForUnit(int unit, int *verbArray, int *verbArrayLen, int verbArrayC
     int u18[11] = {99,100,101,102,103,104,105,106,107,108,109};
     int u19[10] = {110,111,112,113,114,115,116,117,118,119};
     int u20[5] = {120,/*121,*/122,123,124,125/*,126*/};
+    int i = 0;
     switch(unit)
     {
         case 1:
             break;
         case 2:
-            for (int i = 0; i < 4; i++)
+            for ( ; i < 4 && i + *verbArrayLen < verbArrayCapacity; i++)
                 verbArray[*verbArrayLen + i] = u2[i];
-            *verbArrayLen += 4;
             break;
         case 3:
-            for (int i = 0; i < 4; i++)
+            for ( ; i < 4 && i + *verbArrayLen < verbArrayCapacity; i++)
                 verbArray[*verbArrayLen + i] = u3[i];
-            *verbArrayLen += 4;
             break;
         case 4:
-            for (int i = 0; i < 4; i++)
+            for ( ; i < 4 && i + *verbArrayLen < verbArrayCapacity; i++)
                 verbArray[*verbArrayLen + i] = u4[i];
-            *verbArrayLen += 4;
             break;
         case 5:
-            for (int i = 0; i < 4; i++)
+            for ( ; i < 4 && i + *verbArrayLen < verbArrayCapacity; i++)
                 verbArray[*verbArrayLen + i] = u5[i];
-            *verbArrayLen += 4;
             break;
         case 6:
-            for (int i = 0; i < 4; i++)
+            for ( ; i < 4 && i + *verbArrayLen < verbArrayCapacity; i++)
                 verbArray[*verbArrayLen + i] = u6[i];
-            *verbArrayLen += 4;
             break;
         case 7:
-            for (int i = 0; i < 3; i++)
+            for ( ; i < 3 && i + *verbArrayLen < verbArrayCapacity; i++)
                 verbArray[*verbArrayLen + i] = u7[i];
-            *verbArrayLen += 3;
         case 8:
-            for (int i = 0; i < 2; i++)
+            for ( ; i < 2 && i + *verbArrayLen < verbArrayCapacity; i++)
                 verbArray[*verbArrayLen + i] = u8[i];
-            *verbArrayLen += 2;
             break;
         case 9:
-            for (int i = 0; i < 4; i++)
+            for ( ; i < 4 && i + *verbArrayLen < verbArrayCapacity; i++)
                 verbArray[*verbArrayLen + i] = u9[i];
-            *verbArrayLen += 4;
             break;
         case 10:
-            for (int i = 0; i < 6; i++)
+            for ( ; i < 6 && i + *verbArrayLen < verbArrayCapacity; i++)
                 verbArray[*verbArrayLen + i] = u10[i];
-            *verbArrayLen += 6;
             break;
         case 11:
-            for (int i = 0; i < 7; i++)
+            for ( ; i < 7 && i + *verbArrayLen < verbArrayCapacity; i++)
                 verbArray[*verbArrayLen + i] = u11[i];
-            *verbArrayLen += 7;
+            break;
         case 12:
-            for (int i = 0; i < 10; i++)
+            for ( ; i < 10 && i + *verbArrayLen < verbArrayCapacity; i++)
                 verbArray[*verbArrayLen + i] = u12[i];
-            *verbArrayLen += 10;
             break;
         case 13:
-            for (int i = 0; i < 8; i++)
+            for ( ; i < 8 && i + *verbArrayLen < verbArrayCapacity; i++)
                 verbArray[*verbArrayLen + i] = u13[i];
-            *verbArrayLen += 8;
             break;
         case 14:
-            for (int i = 0; i < 13; i++)
+            for ( ; i < 13 && i + *verbArrayLen < verbArrayCapacity; i++)
                 verbArray[*verbArrayLen + i] = u14[i];
-            *verbArrayLen += 13;
             break;
         case 15:
-            for (int i = 0; i < 8; i++)
+            for ( ; i < 8 && i + *verbArrayLen < verbArrayCapacity; i++)
                 verbArray[*verbArrayLen + i] = u15[i];
-            *verbArrayLen += 8;
             break;
         case 16:
-            for (int i = 0; i < 9; i++)
+            for ( ; i < 9 && i + *verbArrayLen < verbArrayCapacity; i++)
                 verbArray[*verbArrayLen + i] = u16[i];
-            *verbArrayLen += 9;
             break;
         case 17:
-            for (int i = 0; i < 7; i++)
+            for ( ; i < 7 && i + *verbArrayLen < verbArrayCapacity; i++)
                 verbArray[*verbArrayLen + i] = u17[i];
-            *verbArrayLen += 7;
             break;
         case 18:
-            for (int i = 0; i < 11; i++)
+            for ( ; i < 11 && i + *verbArrayLen < verbArrayCapacity; i++)
                 verbArray[*verbArrayLen + i] = u18[i];
-            *verbArrayLen += 11;
             break;
         case 19:
-            for (int i = 0; i < 10; i++)
+            for ( ; i < 10 && i + *verbArrayLen < verbArrayCapacity; i++)
                 verbArray[*verbArrayLen + i] = u19[i];
-            *verbArrayLen += 10;
             break;
         case 20:
-            for (int i = 0; i < 5; i++)
+            for ( ; i < 5 && i + *verbArrayLen < verbArrayCapacity; i++)
                 verbArray[*verbArrayLen + i] = u20[i];
-            *verbArrayLen += 5;
             break;
     }
+    *verbArrayLen += i;
 }
 
 //true for same, false for different

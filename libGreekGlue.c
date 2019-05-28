@@ -32,8 +32,7 @@ JNIEXPORT jboolean JNICALL
 }
 
 JNIEXPORT int JNICALL
-Java_com_philolog_hc_VerbSequence_setupUnits( JNIEnv* env, jobject thiz, jbooleanArray arr, jboolean isHCGame)
-{
+Java_com_philolog_hc_VerbSequence_setupUnits( JNIEnv* env, jobject thiz, jbooleanArray arr, jboolean isHCGame) {
     jboolean *ba;
     ba = (*env)->GetBooleanArrayElements(env, arr, NULL);
     int baLength = (*env)->GetArrayLength(env, arr);
@@ -41,32 +40,31 @@ Java_com_philolog_hc_VerbSequence_setupUnits( JNIEnv* env, jobject thiz, jboolea
     opt.numUnits = 0;
     int verbsLen = 0;
     bool atLeastOne = false;
-    for (int i = 0; i < baLength; i++) {
+    for (int i = 1; i < baLength; i++) { //i = 1 to skip unit 1
         if (ba[i] == JNI_TRUE) {
             opt.units[opt.numUnits] = i + 1;
             opt.numUnits++;
-            //fixme add verbs
-            addVerbsForUnit(i+1, opt.verbs, &verbsLen, 20);
+            addVerbsForUnit(i + 1, opt.verbs, &verbsLen, NUM_VERBS);
             atLeastOne = true;
         }
     }
-    if (!atLeastOne)
-    {
+    if (!atLeastOne) {
         opt.verbs[0] = 0;
         opt.verbs[1] = 1;
         opt.verbs[2] = 2;
         opt.verbs[3] = 3;
         opt.numVerbs = 4;
-    }
-    else
-    {
+    } else {
         opt.numVerbs = verbsLen;
     }
 
     opt.repsPerVerb = 4;
-
-    LOGE("verbs: %d, %d", opt.verbs[0], opt.numVerbs);
-
+/*
+    for (int i = 0; i < opt.numVerbs; i++) {
+        LOGE("%d, ", opt.verbs[i]);
+    }
+    LOGE("num: %d ", opt.numVerbs);
+*/
     opt.isHCGame = isHCGame;
     resetVerbSeq(isHCGame);
     //opt.practiceVerbID = -1;
