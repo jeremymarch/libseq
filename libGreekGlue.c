@@ -39,23 +39,34 @@ Java_com_philolog_hc_VerbSequence_setupUnits( JNIEnv* env, jobject thiz, jboolea
     int baLength = (*env)->GetArrayLength(env, arr);
 
     opt.numUnits = 0;
+    int verbsLen = 0;
+    bool atLeastOne = false;
     for (int i = 0; i < baLength; i++) {
         if (ba[i] == JNI_TRUE) {
             opt.units[opt.numUnits] = i + 1;
             opt.numUnits++;
             //fixme add verbs
+            addVerbsForUnit(i+1, opt.verbs, &verbsLen, 20);
+            atLeastOne = true;
         }
     }
-    opt.verbs[0] = 3;
-    opt.verbs[1] = 2;
-    opt.verbs[2] = 1;
-    opt.verbs[3] = 0;
-    opt.numVerbs = 4;
+    if (!atLeastOne)
+    {
+        opt.verbs[0] = 0;
+        opt.verbs[1] = 1;
+        opt.verbs[2] = 2;
+        opt.verbs[3] = 3;
+        opt.numVerbs = 4;
+    }
+    else
+    {
+        opt.numVerbs = verbsLen;
+    }
+
     opt.repsPerVerb = 4;
 
     LOGE("verbs: %d, %d", opt.verbs[0], opt.numVerbs);
 
-    int a = 0;
     opt.isHCGame = isHCGame;
     resetVerbSeq(isHCGame);
     //opt.practiceVerbID = -1;

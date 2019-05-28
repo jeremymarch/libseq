@@ -52,6 +52,127 @@ VerbFormC recentVFArray[MAX_RECENT_VF];
 int numRecentVFArray = 0;
 int recentVFArrayHead = -1;
 
+void addVerbsForUnit(int unit, int *verbArray, int *verbArrayLen, int verbArrayCapacity)
+{
+    int u2[4] = {0,1,2,3};
+    int u3[4] = {4,5,6,7};
+    int u4[4] = {8,9,10,11};
+    int u5[4] = {12,13,14,15};
+    int u6[4] = {16,17,18,19};
+    int u7[3] = {20,21,22};
+    int u8[2] = {23,24};
+    int u9[4] = {25,26,27,28};
+    int u10[6] = {29,30,31,32,33,34};
+    int u11[7] = {35,36,37,38,39,40,41};
+    int u12[10] = {42,43,44,45,46,47,48,49,50,51};
+    int u13[8] = {52,53,54,55,56,57,58,59};
+    int u14[13] = {60,61,62,63,64,65,66,67,68,69,70,71,72};
+    int u15[8] = {73,74,75,76,/*77,78,*/79,80,81,82};
+    int u16[9] = {83,84,85,86,87,88,89,90,91};
+    int u17[7] = {92,93,94,95,96,97,98};
+    int u18[11] = {99,100,101,102,103,104,105,106,107,108,109};
+    int u19[10] = {110,111,112,113,114,115,116,117,118,119};
+    int u20[5] = {120,/*121,*/122,123,124,125/*,126*/};
+    switch(unit)
+    {
+        case 1:
+            break;
+        case 2:
+            for (int i = 0; i < 4; i++)
+                verbArray[*verbArrayLen + i] = u2[i];
+            *verbArrayLen += 4;
+            break;
+        case 3:
+            for (int i = 0; i < 4; i++)
+                verbArray[*verbArrayLen + i] = u3[i];
+            *verbArrayLen += 4;
+            break;
+        case 4:
+            for (int i = 0; i < 4; i++)
+                verbArray[*verbArrayLen + i] = u4[i];
+            *verbArrayLen += 4;
+            break;
+        case 5:
+            for (int i = 0; i < 4; i++)
+                verbArray[*verbArrayLen + i] = u5[i];
+            *verbArrayLen += 4;
+            break;
+        case 6:
+            for (int i = 0; i < 4; i++)
+                verbArray[*verbArrayLen + i] = u6[i];
+            *verbArrayLen += 4;
+            break;
+        case 7:
+            for (int i = 0; i < 3; i++)
+                verbArray[*verbArrayLen + i] = u7[i];
+            *verbArrayLen += 3;
+        case 8:
+            for (int i = 0; i < 2; i++)
+                verbArray[*verbArrayLen + i] = u8[i];
+            *verbArrayLen += 2;
+            break;
+        case 9:
+            for (int i = 0; i < 4; i++)
+                verbArray[*verbArrayLen + i] = u9[i];
+            *verbArrayLen += 4;
+            break;
+        case 10:
+            for (int i = 0; i < 6; i++)
+                verbArray[*verbArrayLen + i] = u10[i];
+            *verbArrayLen += 6;
+            break;
+        case 11:
+            for (int i = 0; i < 7; i++)
+                verbArray[*verbArrayLen + i] = u11[i];
+            *verbArrayLen += 7;
+        case 12:
+            for (int i = 0; i < 10; i++)
+                verbArray[*verbArrayLen + i] = u12[i];
+            *verbArrayLen += 10;
+            break;
+        case 13:
+            for (int i = 0; i < 8; i++)
+                verbArray[*verbArrayLen + i] = u13[i];
+            *verbArrayLen += 8;
+            break;
+        case 14:
+            for (int i = 0; i < 13; i++)
+                verbArray[*verbArrayLen + i] = u14[i];
+            *verbArrayLen += 13;
+            break;
+        case 15:
+            for (int i = 0; i < 8; i++)
+                verbArray[*verbArrayLen + i] = u15[i];
+            *verbArrayLen += 8;
+            break;
+        case 16:
+            for (int i = 0; i < 9; i++)
+                verbArray[*verbArrayLen + i] = u16[i];
+            *verbArrayLen += 9;
+            break;
+        case 17:
+            for (int i = 0; i < 7; i++)
+                verbArray[*verbArrayLen + i] = u17[i];
+            *verbArrayLen += 7;
+            break;
+        case 18:
+            for (int i = 0; i < 11; i++)
+                verbArray[*verbArrayLen + i] = u18[i];
+            *verbArrayLen += 11;
+            break;
+        case 19:
+            for (int i = 0; i < 10; i++)
+                verbArray[*verbArrayLen + i] = u19[i];
+            *verbArrayLen += 10;
+            break;
+        case 20:
+            for (int i = 0; i < 5; i++)
+                verbArray[*verbArrayLen + i] = u20[i];
+            *verbArrayLen += 5;
+            break;
+    }
+}
+
 //true for same, false for different
 bool compareVF(VerbFormC *vf1, VerbFormC *vf2)
 {

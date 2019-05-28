@@ -160,6 +160,8 @@ void getRandomEndingAsString(int *units, int numUnits, char *buffer, int bufferL
 
 void startNewGame(bool isGame);
 
+void addVerbsForUnit(int unit, int *verbArray, int *verbArrayLen, int verbArrayCapacity);
+
 #endif /* VerbSequence_h */
 
 
