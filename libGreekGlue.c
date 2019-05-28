@@ -56,8 +56,8 @@ Java_com_philolog_hc_VerbSequence_setupUnits( JNIEnv* env, jobject thiz, jboolea
     LOGE("verbs: %d, %d", opt.verbs[0], opt.numVerbs);
 
     int a = 0;
-    opt.isHCGame = a;//isHCGame;
-    resetVerbSeq(a);//isHCGame);
+    opt.isHCGame = isHCGame;
+    resetVerbSeq(isHCGame);
     //opt.practiceVerbID = -1;
 
     (*env)->ReleaseBooleanArrayElements(env, arr, ba, 0);
