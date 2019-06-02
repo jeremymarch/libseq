@@ -23,6 +23,18 @@
 
 #define SQLITEPREPQUERYLEN 1024
 
+bool isValidFormForUnit(VerbFormC *vf, int unit);
+bool isValidFormForUnitD(VerbFormD *vf, int unit);
+void startNewGame(bool isGame);
+
+Verb *getRandomVerb(int *units, int numUnits);
+Verb *getRandomVerbFromUnit(int *units, int numUnits);
+Ending *getRandomEnding(int *units, int numUnits);
+void getRandomEndingAsString(int *units, int numUnits, char *buffer, int bufferLen);
+void changeFormByDegrees(VerbFormC *verbform, int degrees);
+void generateForm(VerbFormC *verbform);
+void getDistractorsForChange(VerbFormC *orig, VerbFormC *new, int numDistractors, char *buffer);
+
 //these are assigned to globalGameID.
 //its practice, incipient, or 1-n = a real saved game
 
@@ -253,52 +265,55 @@ void startNewGame(bool isGame)
     opt.gameId = GAME_INCIPIENT; //this starts a new game
 }
 
-bool compareFormsCheckMFRecordResult(UCS2 *expected, int expectedLen, UCS2 *entered, int enteredLen, bool MFPressed, const char *elapsedTime, VerbSeqOptionsNew *opt)
+bool compareFormsRecordResult(UCS2 *expected, int expectedLen, UCS2 *entered, int enteredLen, bool MFPressed, const char *elapsedTime, int *score, int *lives)
 {
     char buffer[200];
     bool isCorrect = compareFormsCheckMF(expected, expectedLen, entered, enteredLen, MFPressed);
 
     ucs2_to_utf8_string(entered, enteredLen, (unsigned char*)buffer);
 
-    if(opt->gameId == GAME_INCIPIENT)
+    if(opt.gameId == GAME_INCIPIENT)
     {
-        printf("is new gameid: %d, %d\n", opt->gameId,opt->isHCGame);
+        printf("is new gameid: %d, %d\n", opt.gameId,opt.isHCGame);
         long localGameId = GAME_INCIPIENT;
-        addNewGameToDB(highestUnit, &localGameId, opt->isHCGame);
-        opt->gameId = localGameId;
+        addNewGameToDB(highestUnit, &localGameId, opt.isHCGame);
+        opt.gameId = localGameId;
     }
 
-    if (opt->isHCGame) //is a real game, not practice
+    if (opt.isHCGame) //is a real game, not practice
     {
-        if (opt->score < 0)
+        if (opt.score < 0)
         {
-            opt->score = 0;
+            opt.score = 0;
         }
 
         if (isCorrect)
         {
-            if ( opt->repNum >= opt->repsPerVerb ) //should never be greater than
-                opt->score += (pointsPerForm * bonusPointsMultiple); //add bonus here
+            if ( opt.repNum >= opt.repsPerVerb ) //should never be greater than
+                opt.score += (pointsPerForm * bonusPointsMultiple); //add bonus here
             else
-                opt->score += pointsPerForm;
+                opt.score += pointsPerForm;
         }
         else
         {
-            opt->lives -= 1;
-            opt->repNum = -1; //to start with new verb
-            if ( opt->lives < 1 )
+            opt.lives -= 1;
+            opt.repNum = -1; //to start with new verb
+            if ( opt.lives < 1 )
             {
-                opt->state = STATE_GAMEOVER;
+                opt.state = STATE_GAMEOVER;
             }
         }
-        fprintf(stderr, "Score: %i, Lives: %i\n", opt->score, opt->lives);
+        fprintf(stderr, "Score: %i, Lives: %i\n", opt.score, opt.lives);
 
-        updateGameScore(opt->gameId, opt->score, opt->lives);
+        updateGameScore(opt.gameId, opt.score, opt.lives);
     }
 
-    opt->lastAnswerCorrect = isCorrect; //keep track of last answer here, so we don't need to rely on the db
+    opt.lastAnswerCorrect = isCorrect; //keep track of last answer here, so we don't need to rely on the db
 
-    setHeadAnswer(isCorrect, buffer, elapsedTime, opt);
+    setHeadAnswer(isCorrect, buffer, elapsedTime, &opt);
+    
+    *lives = opt.lives;
+    *score = opt.score;
 
     return isCorrect;
 }
@@ -436,7 +451,7 @@ void randomize ( int arr[], int arrayLen, int lastVerbID)
     }
 }
 
-int nextVerbSeqCustomDB(VerbFormD *vf1, VerbFormD *vf2)
+int nextVerbSeq(VerbFormD *vf1, VerbFormD *vf2)
 {
     if (opt.isHCGame && opt.lives < 1)
     {
