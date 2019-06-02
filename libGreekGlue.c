@@ -125,8 +125,7 @@ Java_com_philolog_hc_VerbSequence_nextVerbSeq( JNIEnv* env, jobject thiz, jobjec
     fid = (*env)->GetFieldID(env,gvcls,"verbid","I");
     vf2.verbid = (*env)->GetIntField(env, gv2 ,fid);
 
-    //ret = nextVerbSeq(&seq, &vf1, &vf2, &opt);
-    ret = nextVerbSeqCustomDB( &vf1, &vf2 );
+    ret = nextVerbSeq( &vf1, &vf2 );
 
     //vf1
     gvcls = (*env)->GetObjectClass(env, gv1);
@@ -220,7 +219,7 @@ Java_com_philolog_hc_GreekVerb_compareFormsCheckMFRecordResult( JNIEnv* env, job
 
     LOGE("Score before: %d", opt.score);
 
-    bool ret = compareFormsCheckMFRecordResult(expecteducs2, expecteducs2Len, givenucs2, givenucs2Len, MFP, elapsedTime, &opt);//, &score, &lives);
+    bool ret = compareFormsRecordResult(expecteducs2, expecteducs2Len, givenucs2, givenucs2Len, MFP, elapsedTime, &score, &lives);//, &score, &lives);
 
     LOGE("Score after: %d", opt.score);
 
@@ -331,6 +330,7 @@ Java_com_philolog_hc_GreekVerb_getAbbrevDescription( JNIEnv* env, jobject thiz )
     return (*env)->NewStringUTF(env, buffer);
 }
 
+/*
 JNIEXPORT void JNICALL
 Java_com_philolog_hc_GreekVerb_generateForm( JNIEnv* env, jobject thiz )
 {
@@ -367,6 +367,7 @@ Java_com_philolog_hc_GreekVerb_generateForm( JNIEnv* env, jobject thiz )
     fid = (*env)->GetFieldID(env,cls,"mood","I");
     (*env)->SetIntField(env, thiz ,fid, vf.mood);
 }
+*/
 
 /*
 JNIEXPORT void JNICALL
