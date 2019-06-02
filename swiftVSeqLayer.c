@@ -25,10 +25,21 @@ void setVerbSeqOptions(const int *persons, const int numPersons, const int *numb
     memmove(opt.moods, moods, numMoods*(sizeof(opt.moods[0])));
     opt.numMood = numMoods;
 
-    memmove(opt.verbs, verbs, numVerbs*(sizeof(opt.verbs[0])));
-    opt.numVerbs = numVerbs;
-    memmove(opt.units, units, numUnits*(sizeof(opt.units[0])));
-    opt.numUnits = numUnits;
+    if (numVerbs < 1) //add verbs by unit
+    {
+        opt.numVerbs = 0;
+        for (int i = 0; i < numUnits; i++)
+        {
+            addVerbsForUnit(units[i], opt.verbs, &opt.numVerbs, NUM_VERBS);
+        }
+        memmove(opt.units, units, numUnits*(sizeof(opt.units[0])));
+        opt.numUnits = numUnits;
+    }
+    else //specify verbs specifically rather than by unit
+    {
+        memmove(opt.verbs, verbs, numVerbs*(sizeof(opt.verbs[0])));
+        opt.numVerbs = numVerbs;
+    }
     
     opt.isHCGame = isGame;
     opt.topUnit = topUnit;
