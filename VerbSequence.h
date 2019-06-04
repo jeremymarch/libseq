@@ -93,6 +93,8 @@ typedef struct vsoNew {
     int verbs[NUM_VERBS];
     int units[20];
     int topUnit;
+    VerbFormD givenForm;
+    VerbFormD requestedForm;
 } VerbSeqOptionsNew;
 
 bool compareFormsRecordResult(UCS2 *expected, int expectedLen, UCS2 *given, int givenLen, bool MFPressed, const char *elapsedTime, int *score, int *lives);

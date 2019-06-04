@@ -46,19 +46,19 @@ bool sqliteTableExists(char *tbl_name);
 int sqliteTableCount(char *tbl_name);
 
 //GLOBAL VARIABLES
-DataFormat *hcdata = NULL;
-size_t sizeInBytes = 0;
-
 VerbSeqOptionsNew opt; //global options
 
 char sqlitePrepquery[SQLITEPREPQUERYLEN];
 sqlite3_stmt *statement;
 sqlite3_stmt *statement2;
-sqlite3 *db;
 
+//fixme add these to options struct?
+sqlite3 *db;
 int pointsPerForm = 1; //this is set in getRandomVerbFromUnit
 int bonusPointsMultiple = 2;
 int highestUnit = 1;
+VerbFormD lastVF;
+int lastFormID = -1;
 
 VerbFormC recentVFArray[MAX_RECENT_VF];
 int numRecentVFArray = 0;
@@ -206,9 +206,6 @@ int stepsAway(VerbFormD *vf1, VerbFormD *vf2)
     return steps;
 }
 
-VerbFormD lastVF;
-int lastFormID = -1;
-
 int findVerbIndexByPointer(Verb *v)
 {
     for (int i = 0; i < NUM_VERBS; i++)
@@ -222,7 +219,7 @@ int findVerbIndexByPointer(Verb *v)
 void randomAlternative(char *s, int *offset);
 void addNewGameToDB(int topUnit, long *gameid, bool isGame);
 void updateGameScore(long gameid, int score, int lives);
-bool setHeadAnswer(bool correct, char *givenAnswer, const char *elapsedTime, VerbSeqOptionsNew *vso);
+bool setHeadAnswer(VerbFormD *requestedForm, bool correct, char *givenAnswer, const char *elapsedTime, VerbSeqOptionsNew *vso);
 
 int getVerbSeqCallback(void *NotUsed, int argc, char **argv,
              char **azColName) {
@@ -310,7 +307,7 @@ bool compareFormsRecordResult(UCS2 *expected, int expectedLen, UCS2 *entered, in
 
     opt.lastAnswerCorrect = isCorrect; //keep track of last answer here, so we don't need to rely on the db
 
-    setHeadAnswer(isCorrect, buffer, elapsedTime, &opt);
+    setHeadAnswer(&opt.requestedForm, isCorrect, buffer, elapsedTime, &opt);
     
     *lives = opt.lives;
     *score = opt.score;
@@ -563,6 +560,15 @@ int nextVerbSeq(VerbFormD *vf1, VerbFormD *vf2)
     }
     copyVFD(vf2, &lastVF);
     sqlite3_finalize(res);
+
+    copyVFD(vf1, &opt.givenForm);
+    copyVFD(vf2, &opt.requestedForm);
+
+    if (opt.gameId != GAME_INCIPIENT && opt.state == STATE_NEW)
+    {
+        setHeadAnswer(&opt.givenForm, true, "START", NULL, &opt);
+    }
+
     return opt.state;
 }
 
@@ -1220,34 +1226,36 @@ bool setupVerbFormsTable(void)
     return true;
 }
 
-bool setHeadAnswer(bool correct, char *givenAnswer, const char *elapsedTime, VerbSeqOptionsNew *vso)
+bool setHeadAnswer(VerbFormD *vf, bool correct, char *givenAnswer, const char *elapsedTime, VerbSeqOptionsNew *vso)
 {
-    if (db)
-    {
-        int lastVerbIndex = lastVF.verbid;
-        if (lastVerbIndex < 0)
-        {
+    if (db) {
+        if (vf->verbid < 0) {
             return false;
         }
         //changd this to only use lastformid
-        snprintf(sqlitePrepquery, SQLITEPREPQUERYLEN, "INSERT INTO verbseq VALUES (NULL,%ld,%ld,%d,%d,%d,%d,%d,%d,%d,'%s','%s');", time(NULL), vso->gameId, lastVF.person, lastVF.number, lastVF.tense, lastVF.voice, lastVF.mood, lastVF.verbid, correct, elapsedTime, givenAnswer);
+        snprintf(sqlitePrepquery, SQLITEPREPQUERYLEN,
+                 "INSERT INTO verbseq VALUES (NULL,%ld,%ld,%d,%d,%d,%d,%d,%d,%d,'%s','%s');",
+                 time(NULL), vso->gameId, vf->person, vf->number, vf->tense, vf->voice, vf->mood,
+                 vf->verbid, correct, elapsedTime, givenAnswer);
         char *zErrMsg = 0;
         int rc = sqlite3_exec(db, sqlitePrepquery, 0, 0, &zErrMsg);
-        if( rc != SQLITE_OK )
-        {
+        if (rc != SQLITE_OK) {
             fprintf(stderr, "SQL1 error: %s\n", zErrMsg);
             sqlite3_free(zErrMsg);
         }
-
-        snprintf(sqlitePrepquery, SQLITEPREPQUERYLEN, " UPDATE verbforms SET lastSeen=datetime('now') WHERE formid=%d;", lastFormID);
-        //char *zErrMsg = 0;
-        rc = sqlite3_exec(db, sqlitePrepquery, 0, 0, &zErrMsg);
-        if( rc != SQLITE_OK )
-        {
-            fprintf(stderr, "SQL2 error: %s\n", zErrMsg);
-            sqlite3_free(zErrMsg);
-        }
         printf("Insert into gameid: %d\n", vso->gameId);
+
+        if (elapsedTime != NULL) {
+            snprintf(sqlitePrepquery, SQLITEPREPQUERYLEN,
+                     " UPDATE verbforms SET lastSeen=datetime('now') WHERE formid=%d;", lastFormID);
+            //char *zErrMsg = 0;
+            rc = sqlite3_exec(db, sqlitePrepquery, 0, 0, &zErrMsg);
+            if (rc != SQLITE_OK) {
+                fprintf(stderr, "SQL2 error: %s\n", zErrMsg);
+                sqlite3_free(zErrMsg);
+            }
+        }
+
     }
     return true;
 }
@@ -1273,6 +1281,9 @@ void addNewGameToDB(int topUnit, long *gameid, bool isGame)
     {
         *gameid = sqlite3_last_insert_rowid(db);
         printf("new id: %d", *gameid);
+        opt.gameId = *gameid;
+        //add first starting form
+        setHeadAnswer(&opt.givenForm, true, "START", NULL, &opt);
     }
 }
 

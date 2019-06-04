@@ -39,9 +39,14 @@ Java_com_philolog_hc_VerbSequence_setupUnits( JNIEnv* env, jobject thiz, jboolea
 
     opt.numUnits = 0;
     int verbsLen = 0;
+    opt.topUnit = 2;
     bool atLeastOne = false;
     for (int i = 1; i < baLength; i++) { //i = 1 to skip unit 1
         if (ba[i] == JNI_TRUE) {
+            if( i + 1 > opt.topUnit )
+            {
+                opt.topUnit = i + 1;
+            }
             opt.units[opt.numUnits] = i + 1;
             opt.numUnits++;
             addVerbsForUnit(i + 1, opt.verbs, &verbsLen, NUM_VERBS);
