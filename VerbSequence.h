@@ -57,7 +57,7 @@ typedef struct da {
     VerbFormRecord vr[2000];
 } DataFormat;
 
-typedef struct vsoNew {
+typedef struct vso {
     
     bool startOnFirstSing;
     bool askEndings;
@@ -75,6 +75,7 @@ typedef struct vsoNew {
     int verbSeq;
     bool firstVerbSeq;
     bool lastAnswerCorrect;
+    int lastFormID;
     int currentVerbIdx;
     int state;
 
@@ -95,7 +96,7 @@ typedef struct vsoNew {
     int topUnit;
     VerbFormD givenForm;
     VerbFormD requestedForm;
-} VerbSeqOptionsNew;
+} VerbSeqOptions;
 
 bool compareFormsRecordResult(UCS2 *expected, int expectedLen, UCS2 *given, int givenLen, bool MFPressed, const char *elapsedTime, int *score, int *lives);
 bool dbInit(const char *path);
