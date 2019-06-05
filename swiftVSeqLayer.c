@@ -52,7 +52,7 @@ void setVerbSeqOptions(const int *persons, const int numPersons, const int *numb
     }
     opt.gameId = GAME_INCIPIENT; //this starts a new game
     
-    printf("here set options. is game: %d\n", isGame);
+    fprintf(stderr, "here set options. is game: %d\n", isGame);
 }
 
 

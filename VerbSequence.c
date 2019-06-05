@@ -18,6 +18,18 @@
 #include "VerbSequence.h"
 #include "sqlite3.h"
 
+//or we could pic a random verb from first half of array.
+//then move last used verb to end of array
+
+
+//what if we had db of verbforms like this:
+//ω verb forms
+//μι verb forms where different
+//any interesting alternates, otherwise need to be asked freq.
+//then we don't ask same verb form for a different verb often.
+//we would get more variation
+//at max difficulty we would use different principal part for every change.
+
 //https://stackoverflow.com/questions/1941307/debug-print-macro-in-c
 #define HCDEBUG
 #if defined(HCDEBUG)
@@ -254,7 +266,7 @@ bool compareFormsRecordResult(UCS2 *expected, int expectedLen, UCS2 *entered, in
 
     if(opt.gameId == GAME_INCIPIENT)
     {
-        DEBUG_PRINT("is new gameid: %d, %d\n", opt.gameId,opt.isHCGame);
+        DEBUG_PRINT("is new gameid: %ld, %d\n", opt.gameId,opt.isHCGame);
         long localGameId = GAME_INCIPIENT;
         addNewGameToDB(opt.topUnit, &localGameId, opt.isHCGame);
         opt.gameId = localGameId;
@@ -400,18 +412,6 @@ void swap (int *a, int *b)
     *a = *b;
     *b = temp;
 }
-
-//or we could pic a random verb from first half of array.
-//then move last used verb to end of array
-
-
-//what if we had db of verbforms like this:
-//ω verb forms
-//μι verb forms where different
-//any interesting alternates, otherwise need to be asked freq.
-//then we don't ask same verb form for a different verb often.
-//we would get more variation
-//at max difficulty we would use different principal part for every change.
 
 //we want the last verbid to be last.
 void randomize ( int arr[], int arrayLen, int lastVerbID)
@@ -963,7 +963,7 @@ bool setHeadAnswer(VerbFormD *vf, bool correct, char *givenAnswer, const char *e
             DEBUG_PRINT("SQL1 error: %s\n", zErrMsg);
             sqlite3_free(zErrMsg);
         }
-        DEBUG_PRINT("Insert into gameid: %d\n", vso->gameId);
+        DEBUG_PRINT("Insert into gameid: %ld\n", vso->gameId);
 
         if (elapsedTime != NULL) {
             snprintf(sqlitePrepquery, SQLITEPREPQUERYLEN,
@@ -1000,7 +1000,7 @@ void addNewGameToDB(int topUnit, long *gameid, bool isGame)
     else
     {
         *gameid = sqlite3_last_insert_rowid(db);
-        DEBUG_PRINT("new id: %d", *gameid);
+        DEBUG_PRINT("new id: %ld", *gameid);
         opt.gameId = *gameid;
         //add first starting form
         setHeadAnswer(&opt.givenForm, true, "START", NULL, &opt);
