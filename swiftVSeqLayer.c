@@ -10,9 +10,10 @@
 #include "swiftVSeqLayer.h"
 #include "VerbSequence.h"
 
-extern VerbSeqOptions opt; //global options
+//global options
+VerbSeqOptions opt;
 
-void setVerbSeqOptions(const int *persons, const int numPersons, const int *numbers, const int numNumbers, const int *tenses, const int numTenses, const int *voices, const int numVoices, const int *moods, const int numMoods, const int *verbs, const int numVerbs, const int *units, const int numUnits, bool shuffle, int repsPerVerb, int topUnit, bool isGame)
+void swSetVerbSeqOptions(const int *persons, const int numPersons, const int *numbers, const int numNumbers, const int *tenses, const int numTenses, const int *voices, const int numVoices, const int *moods, const int numMoods, const int *verbs, const int numVerbs, const int *units, const int numUnits, bool shuffle, int repsPerVerb, int topUnit, bool isGame)
 {
     memmove(opt.persons, persons, numPersons*(sizeof(opt.persons[0])));
     opt.numPerson = numPersons;
@@ -30,7 +31,7 @@ void setVerbSeqOptions(const int *persons, const int numPersons, const int *numb
         opt.numVerbs = 0;
         for (int i = 0; i < numUnits; i++)
         {
-            addVerbsForUnit(units[i], opt.verbs, &opt.numVerbs, NUM_VERBS);
+            vsAddVerbsForUnit(&opt, units[i], opt.verbs, &opt.numVerbs, NUM_VERBS);
         }
         memmove(opt.units, units, numUnits*(sizeof(opt.units[0])));
         opt.numUnits = numUnits;
@@ -55,4 +56,24 @@ void setVerbSeqOptions(const int *persons, const int numPersons, const int *numb
     fprintf(stderr, "here set options. is game: %d\n", isGame);
 }
 
+bool swvsInit(const char *path)
+{
+    return vsInit(&opt, path);
+}
 
+//void vsAddVerbsForUnit(int unit, int *verbArray, int *verbArrayLen, int verbArrayCapacity);
+
+int swvsNext(VerbFormD *vf1, VerbFormD *vf2)
+{
+    return vsNext(&opt, vf1, vf2);
+}
+
+bool swvsCompareFormsRecordResult(UCS2 *expected, int expectedLen, UCS2 *given, int givenLen, bool MFPressed, const char *elapsedTime, int *score, int *lives)
+{
+    return vsCompareFormsRecordResult(&opt, expected, expectedLen, given, givenLen, MFPressed, elapsedTime, score, lives);
+}
+
+void swvsReset(bool isGame)
+{
+    vsReset(&opt, isGame);
+}

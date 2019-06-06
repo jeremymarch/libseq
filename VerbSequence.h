@@ -27,36 +27,6 @@ enum {
     GAME_PRACTICE = 1 //the practice "game" has an id of 1.
 };
 
-enum {
-    VERB_SEQ_CHANGE = 1,
-    VERB_SEQ_CHANGE_NEW,
-    VERB_SEQ_PP,
-    VERB_SEQ_ENDING
-};
-
-typedef struct vfr VerbFormRecord;
-struct vfr {
-    time_t time;
-    int elapsedTime;
-    int verb;
-    unsigned char person;
-    unsigned char number;
-    unsigned char tense;
-    unsigned char voice;
-    unsigned char mood;
-    bool correct;
-    char answer[130]; //needs to be more than longest answer: Longest Form: 2,1,3,0,2, v: καταστήσαιεν, καταστήσειαν, κατασταῖεν, κατασταίησαν, l: 102
-};
-
-
-
-//for mmap on ios see: https://github.com/mekjaer/ios-mmap/blob/master/ios-mmap-example/ios-mmap-example/AppDelegate.m
-typedef struct da {
-    unsigned int numRecords;
-    unsigned int head;
-    VerbFormRecord vr[2000];
-} DataFormat;
-
 typedef struct vso {
     
     bool startOnFirstSing;
@@ -98,11 +68,11 @@ typedef struct vso {
     VerbFormD requestedForm;
 } VerbSeqOptions;
 
-bool compareFormsRecordResult(UCS2 *expected, int expectedLen, UCS2 *given, int givenLen, bool MFPressed, const char *elapsedTime, int *score, int *lives);
-bool dbInit(const char *path);
-int nextVerbSeq(VerbFormD *vf1, VerbFormD *vf2);
-void resetVerbSeq(bool isGame);
-void addVerbsForUnit(int unit, int *verbArray, int *verbArrayLen, int verbArrayCapacity);
+bool vsInit(VerbSeqOptions *vs, const char *path);
+void vsAddVerbsForUnit(VerbSeqOptions *vs, int unit, int *verbArray, int *verbArrayLen, int verbArrayCapacity);
+int vsNext(VerbSeqOptions *vs, VerbFormD *vf1, VerbFormD *vf2);
+bool vsCompareFormsRecordResult(VerbSeqOptions *vs, UCS2 *expected, int expectedLen, UCS2 *given, int givenLen, bool MFPressed, const char *elapsedTime, int *score, int *lives);
+void vsReset(VerbSeqOptions *vs, bool isGame);
 
 #endif /* VerbSequence_h */
 

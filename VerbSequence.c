@@ -54,7 +54,6 @@ bool sqliteTableExists(char *tbl_name);
 int sqliteTableCount(char *tbl_name);
 
 //GLOBAL VARIABLES
-VerbSeqOptions opt; //global options
 sqlite3 *db;
 char sqlitePrepquery[SQLITEPREPQUERYLEN];
 
@@ -83,7 +82,7 @@ int u17[7] = {92,93,94,95,96,97,98};
 int u18[11] = {99,100,101,102,103,104,105,106,107,108,109};
 int u19[10] = {110,111,112,113,114,115,116,117,118,119};
 int u20[5] = {120,/*121,*/122,123,124,125/*,126*/};
-void addVerbsForUnit(int unit, int *verbArray, int *verbArrayLen, int verbArrayCapacity)
+void vsAddVerbsForUnit(VerbSeqOptions *vs, int unit, int *verbArray, int *verbArrayLen, int verbArrayCapacity)
 {
     int i = 0;
     switch(unit)
@@ -217,7 +216,7 @@ int findVerbIndexByPointer(Verb *v)
 }
 
 void randomAlternative(char *s, int *offset);
-void addNewGameToDB(int topUnit, long *gameid, bool isGame);
+void addNewGameToDB(VerbSeqOptions *vs, int topUnit, long *gameid, bool isGame);
 void updateGameScore(long gameid, int score, int lives);
 bool setHeadAnswer(VerbFormD *requestedForm, bool correct, char *givenAnswer, const char *elapsedTime, VerbSeqOptions *vso);
 
@@ -257,82 +256,82 @@ int callback(void *NotUsed, int argc, char **argv,
     return 0;
 }
 
-bool compareFormsRecordResult(UCS2 *expected, int expectedLen, UCS2 *entered, int enteredLen, bool MFPressed, const char *elapsedTime, int *score, int *lives)
+bool vsCompareFormsRecordResult(VerbSeqOptions *vs, UCS2 *expected, int expectedLen, UCS2 *entered, int enteredLen, bool MFPressed, const char *elapsedTime, int *score, int *lives)
 {
     char buffer[200];
     bool isCorrect = compareFormsCheckMF(expected, expectedLen, entered, enteredLen, MFPressed);
 
     ucs2_to_utf8_string(entered, enteredLen, (unsigned char*)buffer);
 
-    if(opt.gameId == GAME_INCIPIENT)
+    if(vs->gameId == GAME_INCIPIENT)
     {
-        DEBUG_PRINT("is new gameid: %ld, %d\n", opt.gameId,opt.isHCGame);
+        DEBUG_PRINT("is new gameid: %ld, %d\n", vs->gameId,vs->isHCGame);
         long localGameId = GAME_INCIPIENT;
-        addNewGameToDB(opt.topUnit, &localGameId, opt.isHCGame);
-        opt.gameId = localGameId;
+        addNewGameToDB(vs, vs->topUnit, &localGameId, vs->isHCGame);
+        vs->gameId = localGameId;
     }
 
-    if (opt.isHCGame) //is a real game, not practice
+    if (vs->isHCGame) //is a real game, not practice
     {
-        if (opt.score < 0)
+        if (vs->score < 0)
         {
-            opt.score = 0;
+            vs->score = 0;
         }
 
         if (isCorrect)
         {
-            int pointsPerForm = opt.topUnit;
-            if ( opt.repNum >= opt.repsPerVerb ) //should never be greater than
-                opt.score += (pointsPerForm * BONUS_POINTS_MULTIPLE); //add bonus here
+            int pointsPerForm = vs->topUnit;
+            if ( vs->repNum >= vs->repsPerVerb ) //should never be greater than
+                vs->score += (pointsPerForm * BONUS_POINTS_MULTIPLE); //add bonus here
             else
-                opt.score += pointsPerForm;
+                vs->score += pointsPerForm;
         }
         else
         {
-            opt.lives -= 1;
-            opt.repNum = -1; //to start with new verb
-            if ( opt.lives < 1 )
+            vs->lives -= 1;
+            vs->repNum = -1; //to start with new verb
+            if ( vs->lives < 1 )
             {
-                opt.state = STATE_GAMEOVER;
+                vs->state = STATE_GAMEOVER;
             }
         }
-        DEBUG_PRINT("Score: %i, Lives: %i\n", opt.score, opt.lives);
+        DEBUG_PRINT("Score: %i, Lives: %i\n", vs->score, vs->lives);
 
-        updateGameScore(opt.gameId, opt.score, opt.lives);
+        updateGameScore(vs->gameId, vs->score, vs->lives);
     }
 
-    opt.lastAnswerCorrect = isCorrect; //keep track of last answer here, so we don't need to rely on the db
+    vs->lastAnswerCorrect = isCorrect; //keep track of last answer here, so we don't need to rely on the db
 
-    setHeadAnswer(&opt.requestedForm, isCorrect, buffer, elapsedTime, &opt);
+    setHeadAnswer(&vs->requestedForm, isCorrect, buffer, elapsedTime, vs);
     
-    *lives = opt.lives;
-    *score = opt.score;
+    *lives = vs->lives;
+    *score = vs->score;
 
     return isCorrect;
 }
 
 int currentVerb = 0;
-void resetVerbSeq(bool isGame)
+void vsReset(VerbSeqOptions *vs, bool isGame)
 {
-    opt.gameId = GAME_INCIPIENT;
+    vs->gameId = GAME_INCIPIENT;
     if (isGame)
     {
         DEBUG_PRINT("reset game\n");
-        opt.score = -1;
-        opt.lives = 3;
-        opt.isHCGame = true;
+        vs->score = -1;
+        vs->lives = 3;
+        vs->isHCGame = true;
     }
     else
     {
         DEBUG_PRINT("reset practice\n");
-        opt.score = -1;
-        opt.lives = -1;
-        opt.isHCGame = false;
+        vs->score = -1;
+        vs->lives = -1;
+        vs->isHCGame = false;
     }
-    opt.state = STATE_NEW;
-    opt.repNum = -1;
-    opt.lastAnswerCorrect = false;
-    opt.currentVerbIdx = 0;
+    vs->state = STATE_NEW;
+    vs->repNum = -1;
+    vs->lastAnswerCorrect = false;
+    vs->currentVerbIdx = 0;
 }
 
 void copyVFD(VerbFormD *fromVF, VerbFormD *toVF)
@@ -418,7 +417,7 @@ void randomize ( int arr[], int arrayLen, int lastVerbID)
 {
     // Use a different seed value so that we don't get same
     // result each time we run this program
-    srand ( time(NULL) );
+    srand ( (unsigned int)time(NULL) );
 
     // Start from the last element and swap one by one. We don't
     // need to run for the first element that's why i > 0
@@ -432,77 +431,77 @@ void randomize ( int arr[], int arrayLen, int lastVerbID)
     }
 }
 
-int nextVerbSeq(VerbFormD *vf1, VerbFormD *vf2)
+int vsNext(VerbSeqOptions *vs, VerbFormD *vf1, VerbFormD *vf2)
 {
-    if (opt.isHCGame && opt.lives < 1)
+    if (vs->isHCGame && vs->lives < 1)
     {
-        opt.state = STATE_GAMEOVER;
-        return opt.state;
+        vs->state = STATE_GAMEOVER;
+        return vs->state;
     }
 
-    opt.state = STATE_NEW;
+    vs->state = STATE_NEW;
     //assert(verbIDs.count > 0, "Error: getNext no verbIDs")
-    if (opt.numVerbs < 1)
+    if (vs->numVerbs < 1)
     {
-        opt.verbs[0] = 0;
-        opt.numVerbs = 1;
+        vs->verbs[0] = 0;
+        vs->numVerbs = 1;
     }
     //printf("repnum: \(repNum), \(verbIDs.count)")
 
     //are we at end and need to reshuffle?
-    if (opt.repNum >= opt.repsPerVerb && opt.currentVerbIdx >= opt.numVerbs - 1)
+    if (vs->repNum >= vs->repsPerVerb && vs->currentVerbIdx >= vs->numVerbs - 1)
     {
-        opt.repNum = -1; //reshuffle and restart
+        vs->repNum = -1; //reshuffle and restart
     }
 
     //brand new or time to reshuffle
-    if (opt.repNum < 0)
+    if (vs->repNum < 0)
     {
         //no need to shuffle if there are only two
-        if (opt.numVerbs == 1)
+        if (vs->numVerbs == 1)
         {
-            opt.repNum = 1;
-            opt.repsPerVerb = 9999999;
-            opt.currentVerbIdx = 0;
+            vs->repNum = 1;
+            vs->repsPerVerb = 9999999;
+            vs->currentVerbIdx = 0;
         }
-        else if (opt.numVerbs == 2)
+        else if (vs->numVerbs == 2)
         {
-            //flip them, if two, since we are setting opt.currentVerbIdx to 0 below
-            int temp = opt.verbs[0];
-            opt.verbs[0] = opt.verbs[1];
-            opt.verbs[1] = temp;
+            //flip them, if two, since we are setting vs->currentVerbIdx to 0 below
+            int temp = vs->verbs[0];
+            vs->verbs[0] = vs->verbs[1];
+            vs->verbs[1] = temp;
         }
-        else if (opt.numVerbs > 2)
+        else if (vs->numVerbs > 2)
         {
             //we don't want to randomly get same verb twice in a row
             //do {
-            randomize(opt.verbs, opt.numVerbs, vf1->verbid);
-            //} while (opt.verbs[0] == vf1->verbid);
+            randomize(vs->verbs, vs->numVerbs, vf1->verbid);
+            //} while (vs->verbs[0] == vf1->verbid);
         }
-        opt.repNum = 1;
-        opt.currentVerbIdx = 0;
+        vs->repNum = 1;
+        vs->currentVerbIdx = 0;
         //givenForm.person = .unset; //reset
-        opt.state = STATE_NEW;
+        vs->state = STATE_NEW;
     }
-    else if (opt.repNum >= opt.repsPerVerb) // maxRepsPerVerb
+    else if (vs->repNum >= vs->repsPerVerb) // maxRepsPerVerb
     {
-        opt.currentVerbIdx += 1;
-        opt.repNum = 1;
+        vs->currentVerbIdx += 1;
+        vs->repNum = 1;
         //givenForm.person = .unset; //reset
-        opt.state = STATE_NEW;
+        vs->state = STATE_NEW;
     }
     else
     {
         //state = .rep????
-        opt.repNum += 1;
-        opt.state = STATE_REP;
+        vs->repNum += 1;
+        vs->state = STATE_REP;
     }
 
-    vf1->verbid = opt.verbs[opt.currentVerbIdx];
+    vf1->verbid = vs->verbs[vs->currentVerbIdx];
 
-    DEBUG_PRINT("crep: %d, %d, %d\n", opt.repNum, opt.repsPerVerb, opt.state);
+    DEBUG_PRINT("crep: %d, %d, %d\n", vs->repNum, vs->repsPerVerb, vs->state);
 
-    if (opt.state != STATE_NEW)
+    if (vs->state != STATE_NEW)
     {
         copyVFD(vf2, vf1);
     }
@@ -519,7 +518,7 @@ int nextVerbSeq(VerbFormD *vf1, VerbFormD *vf2)
         return 0;
     }
 
-    if (opt.state == STATE_NEW)//unset
+    if (vs->state == STATE_NEW)//unset
     {
         getLastSeen(vf1); //set first form to last seen
         DEBUG_PRINT("new verb\n");
@@ -533,27 +532,27 @@ int nextVerbSeq(VerbFormD *vf1, VerbFormD *vf2)
         vf2->voice = sqlite3_column_int(res, 3);
         vf2->mood = sqlite3_column_int(res, 4);
         vf2->verbid = sqlite3_column_int(res, 5);
-        opt.lastFormID = sqlite3_column_int(res, 6);
+        vs->lastFormID = sqlite3_column_int(res, 6);
 
         //fixme need to block dashes
-        if (stepsAway(vf1, vf2) == 2/*fix me: change to variable*/ && !mpToMp(vf1, vf2) && isValidFormForUnitD(vf2, opt.topUnit))
+        if (stepsAway(vf1, vf2) == 2/*fix me: change to variable*/ && !mpToMp(vf1, vf2) && isValidFormForUnitD(vf2, vs->topUnit))
         {
             break;
         }
-        //fprintf(stderr, "top unit: %d\n", opt.topUnit);
+        //fprintf(stderr, "top unit: %d\n", vs->topUnit);
     }
 
     sqlite3_finalize(res);
 
-    copyVFD(vf1, &opt.givenForm);
-    copyVFD(vf2, &opt.requestedForm);
+    copyVFD(vf1, &vs->givenForm);
+    copyVFD(vf2, &vs->requestedForm);
 
-    if (opt.gameId != GAME_INCIPIENT && opt.state == STATE_NEW)
+    if (vs->gameId != GAME_INCIPIENT && vs->state == STATE_NEW)
     {
-        setHeadAnswer(&opt.givenForm, true, "START", NULL, &opt);
+        setHeadAnswer(&vs->givenForm, true, "START", NULL, vs);
     }
 
-    return opt.state;
+    return vs->state;
 }
 
 /*
@@ -724,7 +723,7 @@ long randWithMax(unsigned int max)
 
 /***********************DB**********************/
 
-bool dbInit(const char *path)
+bool vsInit(VerbSeqOptions *vs, const char *path)
 {
     unsigned long dbpathLen = strlen(path) + 12;
     char dbpath[dbpathLen];
@@ -741,6 +740,7 @@ bool dbInit(const char *path)
     {
         DEBUG_PRINT("Can't open database: %s\n", sqlite3_errmsg(db));
         sqlite3_close(db);
+        return false;
     }
     else
     {
@@ -875,7 +875,8 @@ bool setupVerbFormsTable(void)
     "mood INT1 NOT NULL, " \
     "verbid INT NOT NULL " \
     "); " \
-    "CREATE INDEX verbididx ON verbforms(verbid);";
+    "CREATE INDEX verbididx ON verbforms(verbid); " \
+    "UPDATE games SET score = -1, lives = -1 WHERE gameid == 1;";
 
     int rc = sqlite3_exec(db, create, NULL, NULL, &zErrMsg);
     if( rc != SQLITE_OK )
@@ -980,7 +981,7 @@ bool setHeadAnswer(VerbFormD *vf, bool correct, char *givenAnswer, const char *e
     return true;
 }
 
-void addNewGameToDB(int topUnit, long *gameid, bool isGame)
+void addNewGameToDB(VerbSeqOptions *vs, int topUnit, long *gameid, bool isGame)
 {
     char *zErrMsg = 0;
 
@@ -1001,9 +1002,9 @@ void addNewGameToDB(int topUnit, long *gameid, bool isGame)
     {
         *gameid = sqlite3_last_insert_rowid(db);
         DEBUG_PRINT("new id: %ld", *gameid);
-        opt.gameId = *gameid;
+        vs->gameId = *gameid;
         //add first starting form
-        setHeadAnswer(&opt.givenForm, true, "START", NULL, &opt);
+        setHeadAnswer(&vs->givenForm, true, "START", NULL, vs);
     }
 }
 
