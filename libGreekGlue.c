@@ -18,14 +18,15 @@
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 // If you want you can add other log definition for info, warning etc
 
-extern VerbSeqOptionsNew opt;
+//global options
+VerbSeqOptions opt;
 
 JNIEXPORT jboolean JNICALL
           Java_com_philolog_hc_VerbSequence_VerbSeqInit( JNIEnv* env, jobject thiz, jstring path)
 {
     const char *cpath = (*env)->GetStringUTFChars(env, path, 0);
     //VerbSeqInit(cpath);
-    dbInit(cpath);
+    vsInit(&opt, cpath);
     LOGE("INIT dbpath: %s", cpath);
     (*env)->ReleaseStringUTFChars(env, path, cpath);
     return true;
@@ -49,7 +50,7 @@ Java_com_philolog_hc_VerbSequence_setupUnits( JNIEnv* env, jobject thiz, jboolea
             }
             opt.units[opt.numUnits] = i + 1;
             opt.numUnits++;
-            addVerbsForUnit(i + 1, opt.verbs, &verbsLen, NUM_VERBS);
+            vsAddVerbsForUnit(&opt, i + 1, opt.verbs, &verbsLen, NUM_VERBS);
             atLeastOne = true;
         }
     }
@@ -71,7 +72,7 @@ Java_com_philolog_hc_VerbSequence_setupUnits( JNIEnv* env, jobject thiz, jboolea
     LOGE("num: %d ", opt.numVerbs);
 */
     opt.isHCGame = isHCGame;
-    resetVerbSeq(isHCGame);
+    vsReset(&opt, isHCGame);
     //opt.practiceVerbID = -1;
 
     (*env)->ReleaseBooleanArrayElements(env, arr, ba, 0);
@@ -130,7 +131,7 @@ Java_com_philolog_hc_VerbSequence_nextVerbSeq( JNIEnv* env, jobject thiz, jobjec
     fid = (*env)->GetFieldID(env,gvcls,"verbid","I");
     vf2.verbid = (*env)->GetIntField(env, gv2 ,fid);
 
-    ret = nextVerbSeq( &vf1, &vf2 );
+    ret = vsNext( &opt, &vf1, &vf2 );
 
     //vf1
     gvcls = (*env)->GetObjectClass(env, gv1);
@@ -189,7 +190,7 @@ Java_com_philolog_hc_VerbSequence_nextVerbSeq( JNIEnv* env, jobject thiz, jobjec
 JNIEXPORT void JNICALL
 Java_com_philolog_hc_VerbSequence_resetVerbSeq( JNIEnv* env, jobject thiz )
 {
-    resetVerbSeq(opt.isHCGame);
+    vsReset(&opt, opt.isHCGame);
 }
 
 //bool compareFormsCheckMFRecordResult(UCS2 *expected, int expectedLen, UCS2 *given, int givenLen, bool MFPressed, char *elapsedTime, int *score)
@@ -224,7 +225,7 @@ Java_com_philolog_hc_GreekVerb_compareFormsCheckMFRecordResult( JNIEnv* env, job
 
     LOGE("Score before: %d", opt.score);
 
-    bool ret = compareFormsRecordResult(expecteducs2, expecteducs2Len, givenucs2, givenucs2Len, MFP, elapsedTime, &score, &lives);//, &score, &lives);
+    bool ret = vsCompareFormsRecordResult(&opt, expecteducs2, expecteducs2Len, givenucs2, givenucs2Len, MFP, elapsedTime, &score, &lives);//, &score, &lives);
 
     LOGE("Score after: %d", opt.score);
 
@@ -506,78 +507,7 @@ Java_com_philolog_hc_Verb_deponentType( JNIEnv* env, jobject thiz ) {
     Verb *v = &verbs[verbId];
     return deponentType(v);
 }
-/*
-JNIEXPORT void JNICALL
-Java_com_philolog_hc_Verb_getRandomVerb( JNIEnv* env, jobject thiz )
-{
-    long units[13] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13};
-    Verb *v = getRandomVerb(units, 13);
 
-    jfieldID fid;
-    jclass cls;
-    jstring str;
-
-    //http://journals.ecs.soton.ac.uk/java/tutorial/native1.1/implementing/field.html
-    cls = (*env)->GetObjectClass(env, thiz);
-
-    fid = (*env)->GetFieldID(env,cls,"verbId","I");
-    (*env)->SetIntField(env, thiz ,fid, v->verbid);
-
-    fid = (*env)->GetFieldID(env,cls,"present","Ljava/lang/String;");
-    str = (*env)->NewStringUTF(env, v->present);
-    if (NULL == str)
-    {
-        __android_log_print(ANDROID_LOG_VERBOSE, "MyApp", "null string");
-        return;
-    }
-    (*env)->SetObjectField(env, thiz ,fid, str);
-
-    fid = (*env)->GetFieldID(env,cls,"future","Ljava/lang/String;");
-    str = (*env)->NewStringUTF(env, v->future);
-    if (NULL == str)
-    {
-        __android_log_print(ANDROID_LOG_VERBOSE, "MyApp", "null string");
-        return;
-    }
-    (*env)->SetObjectField(env, thiz ,fid, str);
-
-    fid = (*env)->GetFieldID(env,cls,"aorist","Ljava/lang/String;");
-    str = (*env)->NewStringUTF(env, v->aorist);
-    if (NULL == str)
-    {
-        __android_log_print(ANDROID_LOG_VERBOSE, "MyApp", "null string");
-        return;
-    }
-    (*env)->SetObjectField(env, thiz ,fid, str);
-
-    fid = (*env)->GetFieldID(env,cls,"perfect","Ljava/lang/String;");
-    str = (*env)->NewStringUTF(env, v->perf);
-    if (NULL == str)
-    {
-        __android_log_print(ANDROID_LOG_VERBOSE, "MyApp", "null string");
-        return;
-    }
-    (*env)->SetObjectField(env, thiz ,fid, str);
-
-    fid = (*env)->GetFieldID(env,cls,"perfmid","Ljava/lang/String;");
-    str = (*env)->NewStringUTF(env, v->perfmid);
-    if (NULL == str)
-    {
-        __android_log_print(ANDROID_LOG_VERBOSE, "MyApp", "null string");
-        return;
-    }
-    (*env)->SetObjectField(env, thiz ,fid, str);
-
-    fid = (*env)->GetFieldID(env,cls,"aoristpass","Ljava/lang/String;");
-    str = (*env)->NewStringUTF(env, v->aoristpass);
-    if (NULL == str)
-    {
-        __android_log_print(ANDROID_LOG_VERBOSE, "MyApp", "null string");
-        return;
-    }
-    (*env)->SetObjectField(env, thiz ,fid, str);
-}
-*/
 JNIEXPORT jstring JNICALL
 Java_com_philolog_hc_GreekVerb_addAccent( JNIEnv* env, jobject thiz, jint accent, jstring *str) {
     char buffer[1024];
