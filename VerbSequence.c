@@ -508,6 +508,12 @@ int vsNext(VerbSeqOptions *vs, VerbFormD *vf1, VerbFormD *vf2)
     {
         copyVFD(vf2, vf1);
     }
+    
+    if (vs->state == STATE_NEW)//unset
+    {
+        getLastSeen(vf1); //set first form to last seen
+        DEBUG_PRINT("new verb\n");
+    }
 
     //char *err_msg = 0;
     sqlite3_stmt *res;
@@ -520,13 +526,8 @@ int vsNext(VerbSeqOptions *vs, VerbFormD *vf1, VerbFormD *vf2)
         DEBUG_PRINT("Failed to execute statement: %s\n", sqlite3_errmsg(db));
         return 0;
     }
-
-    if (vs->state == STATE_NEW)//unset
-    {
-        getLastSeen(vf1); //set first form to last seen
-        DEBUG_PRINT("new verb\n");
-    }
-
+    
+    int desiredStepsAway = 2;
     while ( sqlite3_step(res) == SQLITE_ROW )
     {
         vf2->person = sqlite3_column_int(res, 0);
@@ -538,11 +539,17 @@ int vsNext(VerbSeqOptions *vs, VerbFormD *vf1, VerbFormD *vf2)
         vs->lastFormID = sqlite3_column_int(res, 6);
 
         //fixme need to block dashes
-        if (stepsAway(vf1, vf2) == 2/*fix me: change to variable*/ && !mpToMp(vf1, vf2) && isValidFormForUnitD(vf2, vs->topUnit))
+        if (stepsAway(vf1, vf2) == desiredStepsAway && !mpToMp(vf1, vf2) && isValidFormForUnitD(vf2, vs->topUnit))
         {
             break;
         }
-        //fprintf(stderr, "top unit: %d\n", vs->topUnit);
+ 
+        /*
+        char buffer[1024];
+        int bufferLen = 0;
+        int res = getForm2(vf2, buffer, &bufferLen, true, false);
+        fprintf(stderr, "fut subj: %d, %d, %s\n", vf2->verbid, buffer);
+        */
     }
 
     sqlite3_finalize(res);
@@ -725,6 +732,7 @@ long randWithMax(unsigned int max)
 }
 
 /***********************DB**********************/
+int sqliteCheckFutSubj();
 
 //returns 0 on success, error code otherwise
 int vsInit(VerbSeqOptions *vs, const char *path)
@@ -794,11 +802,13 @@ int vsInit(VerbSeqOptions *vs, const char *path)
 
     DEBUG_PRINT("exists %d, count %d\n", exists, vfcount);
 
-    if ( !exists || vfcount < 1)
+    if ( !exists || vfcount < 1 || sqliteCheckFutSubj() > 0)
     {
         setupVerbFormsTable();
         DEBUG_PRINT("created verb forms table\n");
     }
+    
+    DEBUG_PRINT("COUNT FUT SUBJ: %d\n", sqliteCheckFutSubj());
 
     DEBUG_PRINT("sqlite success, version: %s\n", SQLITE_VERSION);
     return 0;
@@ -831,6 +841,31 @@ bool sqliteTableExists(char *tbl_name)
 
     sqlite3_finalize(stmt);
     return found;
+}
+
+
+int sqliteCheckFutSubj()
+{
+    sqlite3_stmt *stmt;
+    snprintf(sqlitePrepquery, SQLITEPREPQUERYLEN, "SELECT count(*) FROM verbforms WHERE tense=2 AND mood= 1;");
+    
+    int rc = sqlite3_prepare_v2(db, sqlitePrepquery, -1, &stmt, NULL);
+    if (rc != SQLITE_OK) {
+        DEBUG_PRINT("error: %s\n", sqlite3_errmsg(db));
+        return -1;
+    }
+    if (sqlite3_step(stmt) == SQLITE_ROW)
+    {
+        int count = sqlite3_column_int (stmt, 0);
+        sqlite3_finalize(stmt);
+        return count;
+    }
+    else
+    {
+        DEBUG_PRINT("error: %s\n", sqlite3_errmsg(db));
+        sqlite3_finalize(stmt);
+        return -1;
+    }
 }
 
 int sqliteTableCount(char *tbl_name)
