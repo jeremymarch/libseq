@@ -21,18 +21,18 @@
 //global options
 VerbSeqOptions opt;
 
-JNIEXPORT jboolean JNICALL
-          Java_com_philolog_hc_VerbSequence_VerbSeqInit( JNIEnv* env, jobject thiz, jstring path)
+JNIEXPORT jint JNICALL
+          Java_com_philolog_hc_VerbSequence_vsInit( JNIEnv* env, jobject thiz, jstring path)
 {
     const char *cpath = (*env)->GetStringUTFChars(env, path, 0);
 
-    jboolean b = (jboolean)(vsInit(&opt, cpath) == true);
-    LOGE("INIT dbpath: %s", cpath);
+    jint res = vsInit(&opt, cpath);
+    LOGE("jnivsInit result: %d, db path: %s", res, cpath);
     (*env)->ReleaseStringUTFChars(env, path, cpath);
-    return b;
+    return res;
 }
 
-JNIEXPORT int JNICALL
+JNIEXPORT jint JNICALL
 Java_com_philolog_hc_VerbSequence_setupUnits( JNIEnv* env, jobject thiz, jbooleanArray arr, jboolean isHCGame) {
     jboolean *ba;
     ba = (*env)->GetBooleanArrayElements(env, arr, NULL);
@@ -79,11 +79,11 @@ Java_com_philolog_hc_VerbSequence_setupUnits( JNIEnv* env, jobject thiz, jboolea
     return 1;
 }
 
-JNIEXPORT int JNICALL
-Java_com_philolog_hc_VerbSequence_nextVerbSeq( JNIEnv* env, jobject thiz, jobject gv1, jobject gv2 )
+JNIEXPORT jint JNICALL
+Java_com_philolog_hc_VerbSequence_vsNext( JNIEnv* env, jobject thiz, jobject gv1, jobject gv2 )
 {
     VerbFormD vf1, vf2;
-    int ret = 0;
+    jint ret = 0;
     int seq = 0;
     jfieldID fid;
     jclass gvcls, verbcls;
@@ -188,7 +188,7 @@ Java_com_philolog_hc_VerbSequence_nextVerbSeq( JNIEnv* env, jobject thiz, jobjec
 }
 
 JNIEXPORT void JNICALL
-Java_com_philolog_hc_VerbSequence_resetVerbSeq( JNIEnv* env, jobject thiz )
+Java_com_philolog_hc_VerbSequence_vsReset( JNIEnv* env, jobject thiz )
 {
     vsReset(&opt, opt.isHCGame);
 }

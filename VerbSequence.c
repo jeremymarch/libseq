@@ -726,7 +726,8 @@ long randWithMax(unsigned int max)
 
 /***********************DB**********************/
 
-bool vsInit(VerbSeqOptions *vs, const char *path)
+//returns 0 on success, error code otherwise
+int vsInit(VerbSeqOptions *vs, const char *path)
 {
     unsigned long dbpathLen = strlen(path) + 12;
     char dbpath[dbpathLen];
@@ -743,7 +744,7 @@ bool vsInit(VerbSeqOptions *vs, const char *path)
     {
         DEBUG_PRINT("Can't open database: %s\n", sqlite3_errmsg(db));
         sqlite3_close(db);
-        return false;
+        return 1;
     }
     else
     {
@@ -784,7 +785,7 @@ bool vsInit(VerbSeqOptions *vs, const char *path)
     {
         DEBUG_PRINT("SQL error: %s\n", zErrMsg);
         sqlite3_free(zErrMsg);
-        return false;
+        return 2;
     }
 
     char *verbForms = "verbforms";
@@ -800,7 +801,7 @@ bool vsInit(VerbSeqOptions *vs, const char *path)
     }
 
     DEBUG_PRINT("sqlite success, version: %s\n", SQLITE_VERSION);
-    return true;
+    return 0;
 }
 
 //note the table name is case-sensitive here

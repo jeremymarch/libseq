@@ -68,7 +68,7 @@ typedef struct vso {
     VerbFormD requestedForm;
 } VerbSeqOptions;
 
-bool vsInit(VerbSeqOptions *vs, const char *path);
+int vsInit(VerbSeqOptions *vs, const char *path); //0 for success, else error code
 void vsAddVerbsForUnit(VerbSeqOptions *vs, int unit, int *verbArray, int *verbArrayLen, int verbArrayCapacity);
 int vsNext(VerbSeqOptions *vs, VerbFormD *vf1, VerbFormD *vf2);
 bool vsCompareFormsRecordResult(VerbSeqOptions *vs, UCS2 *expected, int expectedLen, UCS2 *given, int givenLen, bool MFPressed, const char *elapsedTime, int *score, int *lives);
