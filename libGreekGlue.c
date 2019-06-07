@@ -1,6 +1,6 @@
 //Useful link: http://developer.android.com/training/articles/perf-jni.html
 
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(ANDROID)
 
 #include <string.h>
 #include <jni.h>
@@ -13,7 +13,7 @@
 #include "accent.h"
 
 #include <android/log.h>
-#define  LOG_TAG    "your-log-tag"
+#define  LOG_TAG    "hoplite"
 #define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 // If you want you can add other log definition for info, warning etc
