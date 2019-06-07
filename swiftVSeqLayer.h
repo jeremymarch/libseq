@@ -15,7 +15,7 @@
 void swSetVerbSeqOptions(const int *persons, const int numPersons, const int *numbers, const int numNumbers, const int *tenses, const int numTenses, const int *voices, const int numVoices, const int *moods, const int numMoods, const int *verbs, const int numVerbs, const int *units, const int numUnits, bool shuffle, int repsPerVerb, int topUnit, bool isGame);
 
 
-bool swvsInit(const char *path);
+int swvsInit(const char *path);
 //void vsAddVerbsForUnit(int unit, int *verbArray, int *verbArrayLen, int verbArrayCapacity);
 int swvsNext(VerbFormD *vf1, VerbFormD *vf2);
 bool swvsCompareFormsRecordResult(UCS2 *expected, int expectedLen, UCS2 *given, int givenLen, bool MFPressed, const char *elapsedTime, int *score, int *lives);

@@ -56,7 +56,7 @@ void swSetVerbSeqOptions(const int *persons, const int numPersons, const int *nu
     fprintf(stderr, "here set options. is game: %d\n", isGame);
 }
 
-bool swvsInit(const char *path)
+int swvsInit(const char *path)
 {
     return vsInit(&opt, path);
 }
