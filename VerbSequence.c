@@ -32,7 +32,10 @@
 
 //https://stackoverflow.com/questions/1941307/debug-print-macro-in-c
 #define HCDEBUG
-#if defined(HCDEBUG)
+#if defined(HCDEBUG) && ( defined(__ANDROID__) || defined(ANDROID) )
+#include <android/log.h>
+#define  DEBUG_PRINT(...)  __android_log_print(ANDROID_LOG_ERROR, "Hoplite", __VA_ARGS__)
+#elif defined(HCDEBUG)
 #define DEBUG_PRINT(fmt, args...) fprintf(stderr, "DEBUG: %s:%d:%s(): " fmt, \
 __FILE__, __LINE__, __func__, ##args)
 #else
@@ -47,7 +50,7 @@ bool isValidFormForUnit(VerbFormC *vf, int unit);
 bool isValidFormForUnitD(VerbFormD *vf, int unit);
 
 void copyVFD(VerbFormD *fromVF, VerbFormD *toVF);
-void copyVFC(VerbFormC *fromVF, VerbFormC *toVF);
+//void copyVFC(VerbFormC *fromVF, VerbFormC *toVF);
 bool setupVerbFormsTable(void);
 void insertDB(int formid, VerbFormD *vf, sqlite3_stmt *stmt);
 bool sqliteTableExists(char *tbl_name);
@@ -875,8 +878,8 @@ bool setupVerbFormsTable(void)
     "mood INT1 NOT NULL, " \
     "verbid INT NOT NULL " \
     "); " \
-    "CREATE INDEX verbididx ON verbforms(verbid); " \
-    "UPDATE games SET score = -1, lives = -1 WHERE gameid == 1;";
+    "CREATE INDEX verbididx ON verbforms(verbid); ";
+    //"UPDATE games SET score = -1, lives = -1 WHERE gameid == 1;";
 
     int rc = sqlite3_exec(db, create, NULL, NULL, &zErrMsg);
     if( rc != SQLITE_OK )
