@@ -25,11 +25,11 @@ JNIEXPORT jboolean JNICALL
           Java_com_philolog_hc_VerbSequence_VerbSeqInit( JNIEnv* env, jobject thiz, jstring path)
 {
     const char *cpath = (*env)->GetStringUTFChars(env, path, 0);
-    //VerbSeqInit(cpath);
-    vsInit(&opt, cpath);
+
+    jboolean b = (jboolean)(vsInit(&opt, cpath) == true);
     LOGE("INIT dbpath: %s", cpath);
     (*env)->ReleaseStringUTFChars(env, path, cpath);
-    return true;
+    return b;
 }
 
 JNIEXPORT int JNICALL
