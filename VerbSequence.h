@@ -73,6 +73,7 @@ void vsAddVerbsForUnit(VerbSeqOptions *vs, int unit, int *verbArray, int *verbAr
 int vsNext(VerbSeqOptions *vs, VerbFormD *vf1, VerbFormD *vf2);
 bool vsCompareFormsRecordResult(VerbSeqOptions *vs, UCS2 *expected, int expectedLen, UCS2 *given, int givenLen, bool MFPressed, const char *elapsedTime, int *score, int *lives);
 void vsReset(VerbSeqOptions *vs, bool isGame);
+void vsClose(void);
 
 #endif /* VerbSequence_h */
 

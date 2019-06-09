@@ -57,7 +57,7 @@ bool sqliteTableExists(char *tbl_name);
 int sqliteTableCount(char *tbl_name);
 
 //GLOBAL VARIABLES
-sqlite3 *db;
+sqlite3 *db = NULL;
 char sqlitePrepquery[SQLITEPREPQUERYLEN];
 
 /*
@@ -732,7 +732,15 @@ long randWithMax(unsigned int max)
 }
 
 /***********************DB**********************/
-int sqliteCheckFutSubj();
+void vsClose(void)
+{
+    if (db)
+    {
+        sqlite3_close(db);
+    }
+}
+
+int sqliteCheckFutSubj(void);
 
 //returns 0 on success, error code otherwise
 int vsInit(VerbSeqOptions *vs, const char *path)
@@ -745,6 +753,11 @@ int vsInit(VerbSeqOptions *vs, const char *path)
 
     stat(dbpath, &st);
     off_t size = st.st_size;
+    
+    if (db)
+    {
+        sqlite3_close(db);
+    }
 
     char *zErrMsg = 0;
     int rc = sqlite3_open(dbpath, &db);
@@ -752,6 +765,7 @@ int vsInit(VerbSeqOptions *vs, const char *path)
     {
         DEBUG_PRINT("Can't open database: %s\n", sqlite3_errmsg(db));
         sqlite3_close(db);
+        db = NULL;
         return 1;
     }
     else
@@ -844,7 +858,7 @@ bool sqliteTableExists(char *tbl_name)
 }
 
 
-int sqliteCheckFutSubj()
+int sqliteCheckFutSubj(void)
 {
     sqlite3_stmt *stmt;
     snprintf(sqlitePrepquery, SQLITEPREPQUERYLEN, "SELECT count(*) FROM verbforms WHERE tense=2 AND mood= 1;");
