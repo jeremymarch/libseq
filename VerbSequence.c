@@ -783,6 +783,22 @@ int vsInit(VerbSeqOptions *vs, const char *path)
     "topUnit INT NOT NULL, " \
     "lives INT NOT NULL " \
     "); " \
+    
+    "CREATE TABLE IF NOT EXISTS hqvocab (" \
+    "hqid INTEGER PRIMARY KEY UNIQUE NOT NULL, " \
+    "unit INTEGER NOT NULL, " \
+    "lemma CHAR, " \
+    "present CHAR, " \
+    "future CHAR, " \
+    "aorist CHAR, " \
+    "perfect CHAR, " \
+    "perfectmid CHAR, " \
+    "aoristpass CHAR, " \
+    "def CHAR, " \
+    "pos CHAR, " \
+    "note CHAR, " \
+    "seq INTEGER, " \
+    "sortkey CHAR); " \
 
     "CREATE TABLE IF NOT EXISTS verbseq (" \
     "id INTEGER PRIMARY KEY NOT NULL, " \
