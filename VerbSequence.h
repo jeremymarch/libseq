@@ -68,7 +68,7 @@ typedef struct vso {
     VerbFormD requestedForm;
 } VerbSeqOptions;
 
-bool upgradedb2(const char *fromPath, const char *toPath);
+int upgradedb(const char *fromPath, const char *toPath);
 int vsInit(VerbSeqOptions *vs, const char *path); //0 for success, else error code
 void vsAddVerbsForUnit(VerbSeqOptions *vs, int unit, int *verbArray, int *verbArrayLen, int verbArrayCapacity);
 int vsNext(VerbSeqOptions *vs, VerbFormD *vf1, VerbFormD *vf2);

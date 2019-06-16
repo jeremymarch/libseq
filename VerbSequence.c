@@ -1024,7 +1024,7 @@ bool setHeadAnswer(VerbFormD *vf, bool correct, char *givenAnswer, const char *e
         }
         //changd this to only use lastformid
         snprintf(sqlitePrepquery, SQLITEPREPQUERYLEN,
-                 "INSERT INTO verbseq VALUES (NULL,%ld,%ld,%d,%d,%d,%d,%d,%d,%d,'%s','%s');",
+                 "INSERT INTO verbseq (id,answerTimestamp,gameid,person,number,tense,voice,mood,verbid,correct,elapsedTime,answerGiven) VALUES (NULL,%ld,%ld,%d,%d,%d,%d,%d,%d,%d,'%s','%s');",
                  time(NULL), vso->gameId, vf->person, vf->number, vf->tense, vf->voice, vf->mood,
                  vf->verbid, correct, elapsedTime, givenAnswer);
         char *zErrMsg = 0;
@@ -1035,7 +1035,7 @@ bool setHeadAnswer(VerbFormD *vf, bool correct, char *givenAnswer, const char *e
         }
         DEBUG_PRINT("Insert into gameid: %ld\n", vso->gameId);
 
-        if (elapsedTime != NULL) {
+        if (correct) {
             snprintf(sqlitePrepquery, SQLITEPREPQUERYLEN,
                      " UPDATE verbforms SET lastSeen=datetime('now') WHERE formid=%d;", vso->lastFormID);
             //char *zErrMsg = 0;
@@ -1060,7 +1060,7 @@ void addNewGameToDB(VerbSeqOptions *vs, int topUnit, long *gameid, bool isGame)
         initialScore = -1; //we identify practice by -1 score
     }
 
-    snprintf(sqlitePrepquery, SQLITEPREPQUERYLEN, "INSERT INTO games (timest,score,topUnit,lives) VALUES (%li,%d, %d,3);", time(NULL), initialScore, topUnit);
+    snprintf(sqlitePrepquery, SQLITEPREPQUERYLEN, "INSERT INTO games (timest,score,topUnit,lives) VALUES (%li,%d,%d,3);", time(NULL), initialScore, topUnit);
     int rc = sqlite3_exec(db, sqlitePrepquery, 0, 0, &zErrMsg);
     if( rc != SQLITE_OK )
     {
@@ -1123,7 +1123,7 @@ void insertDB(int formid, VerbFormD *vf, sqlite3_stmt *stmt)
 //copy new db to documents directory with temp name
 //copy info from old db into new db
 //delete old db, rename new one to name of old db
-bool upgradedb2(const char *fromPath, const char *toPath)
+int upgradedb(const char *fromPath, const char *toPath)
 {
     sqlite3 *fromDB = NULL;
     sqlite3 *toDB = NULL;
@@ -1135,7 +1135,7 @@ bool upgradedb2(const char *fromPath, const char *toPath)
         DEBUG_PRINT("Can't open from database1: %s, %s\n", sqlite3_errmsg(fromDB), fromPath);
         sqlite3_close(fromDB);
         fromDB = NULL;
-        return false;
+        return 1;
     }
     else
     {
@@ -1147,7 +1147,7 @@ bool upgradedb2(const char *fromPath, const char *toPath)
         DEBUG_PRINT("Can't open from database2: %s, %s\n", sqlite3_errmsg(toDB), toPath);
         sqlite3_close(toDB);
         toDB = NULL;
-        return false;
+        return 2;
     }
     else
     {
@@ -1156,13 +1156,13 @@ bool upgradedb2(const char *fromPath, const char *toPath)
     
     
 
-    char *u1 = "INSERT INTO games (gameid,timest,score,topUnit,lives) VALUES (?1,?2,?3,?4,?5);";
+    char *u1 = "INSERT INTO games (gameid,timest,score,topUnit,lives,gameState) VALUES (?1,?2,?3,?4,?5,-1);";
     rc = sqlite3_prepare_v2(toDB, u1, -1, &res2, NULL);
     if (rc == SQLITE_OK) {
         //sqlite3_bind_int(res, 1, vf1->verbid);
     } else {
         DEBUG_PRINT("Failed to prepare statement1: %s\n", sqlite3_errmsg(toDB));
-        return false;
+        return 3;
     }
     
     char *q1 = "SELECT gameid,timest,score,topUnit,lives FROM games ORDER BY gameid;";
@@ -1171,7 +1171,7 @@ bool upgradedb2(const char *fromPath, const char *toPath)
         //sqlite3_bind_int(res, 1, vf1->verbid);
     } else {
         DEBUG_PRINT("Failed to prepare statement2: %s\n", sqlite3_errmsg(fromDB));
-        return false;
+        return 4;
     }
     
     while ( sqlite3_step(res1) == SQLITE_ROW )
@@ -1181,8 +1181,15 @@ bool upgradedb2(const char *fromPath, const char *toPath)
         int score = sqlite3_column_int(res1, 2);
         int stopUnit = sqlite3_column_int(res1, 3);
         int lives = sqlite3_column_int(res1, 4);
-        //int verbid = sqlite3_column_int(res1, 5);
-        //int lastFormID = sqlite3_column_int(res1, 6);
+        
+        //set practice game to be identified as practice
+        //by score and lives.
+        //in first version practice game always had id of 1
+        if (gameid == 1)
+        {
+            score = -1;
+            lives = -1;
+        }
         
         sqlite3_bind_int(res2, 1, gameid); /* 3 difficulty */
         sqlite3_bind_int(res2, 2, timest); /* 3 default difficulty */
@@ -1205,13 +1212,15 @@ bool upgradedb2(const char *fromPath, const char *toPath)
     sqlite3_finalize(res1);
     sqlite3_finalize(res2);
 
-    char *u2 = "INSERT INTO verbseq (id,timest,gameid,person,number,tense,voice,mood,verbid,correct,elapsedtime,incorrectAns) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12);";
+    //timest has been renamed to answerTimestamp
+    //incorrectAns has been renamed to answerGiven
+    char *u2 = "INSERT INTO verbseq (id,answerTimestamp,gameid,person,number,tense,voice,mood,verbid,correct,elapsedtime,answerGiven) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12);";
     rc = sqlite3_prepare_v2(toDB, u2, -1, &res2, NULL);
     if (rc == SQLITE_OK) {
         //sqlite3_bind_int(res, 1, vf1->verbid);
     } else {
         DEBUG_PRINT("Failed to prepare statement1: %s\n", sqlite3_errmsg(toDB));
-        return false;
+        return 5;
     }
     
     char *q2 = "SELECT id,timest,gameid,person,number,tense,voice,mood,verbid,correct,elapsedtime,incorrectAns FROM verbseq ORDER BY id;";
@@ -1220,7 +1229,7 @@ bool upgradedb2(const char *fromPath, const char *toPath)
         //sqlite3_bind_int(res, 1, vf1->verbid);
     } else {
         DEBUG_PRINT("Failed to prepare statement2: %s\n", sqlite3_errmsg(fromDB));
-        return false;
+        return 6;
     }
 
     while ( sqlite3_step(res1) == SQLITE_ROW )
@@ -1266,5 +1275,5 @@ bool upgradedb2(const char *fromPath, const char *toPath)
     
     sqlite3_close(toDB);
     sqlite3_close(fromDB);
-    return true;
+    return 0;
 }
