@@ -1132,46 +1132,32 @@ int upgradedb(const char *fromPath, const char *toPath)
     int rc = sqlite3_open(fromPath, &fromDB);
     if( rc != SQLITE_OK )
     {
-        DEBUG_PRINT("Can't open from database1: %s, %s\n", sqlite3_errmsg(fromDB), fromPath);
+        DEBUG_PRINT("Can't open previous database version: %s, %s\n", sqlite3_errmsg(fromDB), fromPath);
         sqlite3_close(fromDB);
         fromDB = NULL;
-        return 1;
-    }
-    else
-    {
-        DEBUG_PRINT("SQLite db open1, path: %s\n", fromPath);
+        return 91;
     }
     rc = sqlite3_open(toPath, &toDB);
     if( rc != SQLITE_OK )
     {
-        DEBUG_PRINT("Can't open from database2: %s, %s\n", sqlite3_errmsg(toDB), toPath);
+        DEBUG_PRINT("Can't open new database version: %s, %s\n", sqlite3_errmsg(toDB), toPath);
         sqlite3_close(toDB);
         toDB = NULL;
-        return 2;
+        return 92;
     }
-    else
-    {
-        DEBUG_PRINT("SQLite db open2, path: %s\n", toPath);
-    }
-    
-    
 
     char *u1 = "INSERT INTO games (gameid,timest,score,topUnit,lives,gameState) VALUES (?1,?2,?3,?4,?5,-1);";
     rc = sqlite3_prepare_v2(toDB, u1, -1, &res2, NULL);
-    if (rc == SQLITE_OK) {
-        //sqlite3_bind_int(res, 1, vf1->verbid);
-    } else {
+    if (rc != SQLITE_OK) {
         DEBUG_PRINT("Failed to prepare statement1: %s\n", sqlite3_errmsg(toDB));
-        return 3;
+        return 93;
     }
     
     char *q1 = "SELECT gameid,timest,score,topUnit,lives FROM games ORDER BY gameid;";
     rc = sqlite3_prepare_v2(fromDB, q1, -1, &res1, NULL);
-    if (rc == SQLITE_OK) {
-        //sqlite3_bind_int(res, 1, vf1->verbid);
-    } else {
+    if (rc != SQLITE_OK) {
         DEBUG_PRINT("Failed to prepare statement2: %s\n", sqlite3_errmsg(fromDB));
-        return 4;
+        return 94;
     }
     
     while ( sqlite3_step(res1) == SQLITE_ROW )
@@ -1189,15 +1175,14 @@ int upgradedb(const char *fromPath, const char *toPath)
         {
             score = -1;
             lives = -1;
+            timest = time(NULL);
         }
         
-        sqlite3_bind_int(res2, 1, gameid); /* 3 difficulty */
-        sqlite3_bind_int(res2, 2, timest); /* 3 default difficulty */
+        sqlite3_bind_int(res2, 1, gameid);
+        sqlite3_bind_int(res2, 2, timest);
         sqlite3_bind_int(res2, 3, score);
-        sqlite3_bind_int(res2, 4, stopUnit); /* 4 */
-        sqlite3_bind_int(res2, 5, lives); /* 5 */
-        //sqlite3_bind_int(res2, 6, verbid); /* 6 */
-        //sqlite3_bind_int(res2, 7, lastFormID); /* 7 */
+        sqlite3_bind_int(res2, 4, stopUnit);
+        sqlite3_bind_int(res2, 5, lives);
         
         if ( sqlite3_step(res2) != SQLITE_DONE )
         {
@@ -1216,20 +1201,16 @@ int upgradedb(const char *fromPath, const char *toPath)
     //incorrectAns has been renamed to answerGiven
     char *u2 = "INSERT INTO verbseq (id,answerTimestamp,gameid,person,number,tense,voice,mood,verbid,correct,elapsedtime,answerGiven) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12);";
     rc = sqlite3_prepare_v2(toDB, u2, -1, &res2, NULL);
-    if (rc == SQLITE_OK) {
-        //sqlite3_bind_int(res, 1, vf1->verbid);
-    } else {
+    if (rc != SQLITE_OK) {
         DEBUG_PRINT("Failed to prepare statement1: %s\n", sqlite3_errmsg(toDB));
-        return 5;
+        return 95;
     }
     
     char *q2 = "SELECT id,timest,gameid,person,number,tense,voice,mood,verbid,correct,elapsedtime,incorrectAns FROM verbseq ORDER BY id;";
     rc = sqlite3_prepare_v2(fromDB, q2, -1, &res1, NULL);
-    if (rc == SQLITE_OK) {
-        //sqlite3_bind_int(res, 1, vf1->verbid);
-    } else {
+    if (rc != SQLITE_OK) {
         DEBUG_PRINT("Failed to prepare statement2: %s\n", sqlite3_errmsg(fromDB));
-        return 6;
+        return 96;
     }
 
     while ( sqlite3_step(res1) == SQLITE_ROW )
@@ -1247,25 +1228,25 @@ int upgradedb(const char *fromPath, const char *toPath)
         const unsigned char *elapsedtime = sqlite3_column_text(res1, 10);
         const unsigned char *incorrectAns = sqlite3_column_text(res1, 11);
         
-        sqlite3_bind_int(res2, 1, id); /* 3 difficulty */
-        sqlite3_bind_int(res2, 2, timest); /* 3 default difficulty */
+        sqlite3_bind_int(res2, 1, id);
+        sqlite3_bind_int(res2, 2, timest);
         sqlite3_bind_int(res2, 3, gameid);
-        sqlite3_bind_int(res2, 4, person); /* 4 */
-        sqlite3_bind_int(res2, 5, number); /* 5 */
-        sqlite3_bind_int(res2, 6, tense); /* 3 difficulty */
-        sqlite3_bind_int(res2, 7, voice); /* 3 default difficulty */
+        sqlite3_bind_int(res2, 4, person);
+        sqlite3_bind_int(res2, 5, number);
+        sqlite3_bind_int(res2, 6, tense);
+        sqlite3_bind_int(res2, 7, voice);
         sqlite3_bind_int(res2, 8, mood);
-        sqlite3_bind_int(res2, 9, verbid); /* 4 */
-        sqlite3_bind_int(res2, 10, correct); /* 5 */
-        sqlite3_bind_text(res2, 11, elapsedtime, -1, SQLITE_STATIC); /* 3 difficulty */
-        sqlite3_bind_text(res2, 12, incorrectAns, -1, SQLITE_STATIC); /* 3 default difficulty */
+        sqlite3_bind_int(res2, 9, verbid);
+        sqlite3_bind_int(res2, 10, correct);
+        sqlite3_bind_text(res2, 11, elapsedtime, -1, SQLITE_STATIC);
+        sqlite3_bind_text(res2, 12, incorrectAns, -1, SQLITE_STATIC);
 
         if ( sqlite3_step(res2) != SQLITE_DONE )
         {
             DEBUG_PRINT("Couldn't insert row, %s\n", sqlite3_errmsg(toDB));
             break;
         }
-        DEBUG_PRINT("Copy gameid: %d\n", gameid);
+        DEBUG_PRINT("Copy move: %d\n", gameid);
         sqlite3_clear_bindings(res2);
         sqlite3_reset(res2);
         
@@ -1275,5 +1256,5 @@ int upgradedb(const char *fromPath, const char *toPath)
     
     sqlite3_close(toDB);
     sqlite3_close(fromDB);
-    return 0;
+    return 0; //0 for success
 }
