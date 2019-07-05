@@ -80,6 +80,17 @@ Java_com_philolog_hc_VerbSequence_setupUnits( JNIEnv* env, jobject thiz, jboolea
 }
 
 JNIEXPORT jint JNICALL
+Java_com_philolog_hc_VerbSequence_upgradedb( JNIEnv* env, jobject thiz, jstring joldpath, jstring jnewpath )
+{
+    const char *oldpath = (*env)->GetStringUTFChars(env, joldpath, 0);
+    const char *newpath = (*env)->GetStringUTFChars(env, jnewpath, 0);
+    int ret = upgradedb(oldpath, newpath);
+    (*env)->ReleaseStringUTFChars(env, joldpath, oldpath);
+    (*env)->ReleaseStringUTFChars(env, jnewpath, newpath);
+    return ret;
+}
+
+JNIEXPORT jint JNICALL
 Java_com_philolog_hc_VerbSequence_vsNext( JNIEnv* env, jobject thiz, jobject gv1, jobject gv2 )
 {
     VerbFormD vf1, vf2;
@@ -509,9 +520,10 @@ Java_com_philolog_hc_Verb_deponentType( JNIEnv* env, jobject thiz ) {
 }
 
 JNIEXPORT jstring JNICALL
-Java_com_philolog_hc_GreekVerb_addAccent( JNIEnv* env, jobject thiz, jint accent, jstring *str) {
-    char buffer[1024];
-    UCS2 ucs2[1024];
+Java_com_philolog_hc_GreekVerb_addAccent( JNIEnv* env, jobject thiz, jint accent, jstring *str ) {
+    int bufferSize = 1024;
+    char buffer[bufferSize];
+    UCS2 ucs2[bufferSize];
     int ucs2Len = 0;
 
     const char *letters = (*env)->GetStringUTFChars(env, str, NULL);
