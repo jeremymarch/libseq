@@ -434,6 +434,22 @@ void randomize ( int arr[], int arrayLen, int lastVerbID)
     }
 }
 
+bool isBlankOrDashOrFails(VerbFormD *vf) {
+    UCS2 buffer[1024];
+    int len = 0;
+    if (getFormUCS2(vf, buffer, &len, 1024, true, false)) {
+        if (buffer[0] == 0x2014) //emdash = blank
+            return true;
+        else if (buffer[0] == 0x2010) //hyphen = dash
+            return true;
+        else
+            return false; //ok to ask
+    }
+    else {
+        return true; //if fails return true to block form
+    }
+}
+
 int vsNext(VerbSeqOptions *vs, VerbFormD *vf1, VerbFormD *vf2)
 {
     if (vs->isHCGame && vs->lives < 1)
@@ -530,16 +546,15 @@ int vsNext(VerbSeqOptions *vs, VerbFormD *vf1, VerbFormD *vf2)
     int desiredStepsAway = 2;
     while ( sqlite3_step(res) == SQLITE_ROW )
     {
-        vf2->person = sqlite3_column_int(res, 0);
-        vf2->number = sqlite3_column_int(res, 1);
-        vf2->tense = sqlite3_column_int(res, 2);
-        vf2->voice = sqlite3_column_int(res, 3);
-        vf2->mood = sqlite3_column_int(res, 4);
+        vf2->person = (unsigned char)sqlite3_column_int(res, 0);
+        vf2->number = (unsigned char)sqlite3_column_int(res, 1);
+        vf2->tense = (unsigned char)sqlite3_column_int(res, 2);
+        vf2->voice = (unsigned char)sqlite3_column_int(res, 3);
+        vf2->mood = (unsigned char)sqlite3_column_int(res, 4);
         vf2->verbid = sqlite3_column_int(res, 5);
         vs->lastFormID = sqlite3_column_int(res, 6);
-
-        //fixme need to block dashes
-        if (stepsAway(vf1, vf2) == desiredStepsAway && !mpToMp(vf1, vf2) && isValidFormForUnitD(vf2, vs->topUnit))
+        
+        if (stepsAway(vf1, vf2) == desiredStepsAway && !isBlankOrDashOrFails(vf2) && !mpToMp(vf1, vf2) && isValidFormForUnitD(vf2, vs->topUnit))
         {
             break;
         }
