@@ -435,9 +435,22 @@ void randomize ( int arr[], int arrayLen, int lastVerbID)
 }
 
 bool isBlankOrDashOrFails(VerbFormD *vf) {
-    UCS2 buffer[1024];
+    int bufferlen = 1024;
+    UCS2 buffer[bufferlen];
     int len = 0;
-    if (getFormUCS2(vf, buffer, &len, 1024, true, false)) {
+    if(vf->verbid < 0 || vf->verbid >= NUM_VERBS)
+    {
+        return true;
+    }
+    VerbFormC vfc;
+    vfc.person = vf->person;
+    vfc.number = vf->number;
+    vfc.tense = vf->tense;
+    vfc.voice = vf->voice;
+    vfc.mood = vf->mood;
+    vfc.verb = &verbs[vf->verbid];
+    
+    if (getFormUCS2(&vfc, buffer, &len, bufferlen, true, false)) {
         if (buffer[0] == 0x2014) //emdash = blank
             return true;
         else if (buffer[0] == 0x2010) //hyphen = dash
