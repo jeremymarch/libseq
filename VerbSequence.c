@@ -546,6 +546,11 @@ int vsNext(VerbSeqOptions *vs, VerbFormD *vf1, VerbFormD *vf2)
 
     //char *err_msg = 0;
     sqlite3_stmt *res;
+    
+    //add hits to results array, then choose a random one.
+    int numResults = 10;
+    int resultIdx = 0;
+    VerbFormD results[numResults];
 
     char *sql = "SELECT person,number,tense,voice,mood,verbid,formid FROM verbforms WHERE verbid= ?1 ORDER BY lastSeen ASC, RANDOM();";
     int rc = sqlite3_prepare_v2(db, sql, -1, &res, NULL);
@@ -569,7 +574,15 @@ int vsNext(VerbSeqOptions *vs, VerbFormD *vf1, VerbFormD *vf2)
         
         if (stepsAway(vf1, vf2) == desiredStepsAway && !isBlankOrDashOrFails(vf2) && !mpToMp(vf1, vf2) && isValidFormForUnitD(vf2, vs->topUnit))
         {
-            break;
+            if (resultIdx <= numResults)
+            {
+                copyVFD(vf2, &results[resultIdx]);
+                resultIdx++;
+            }
+            else
+            {
+                break;
+            }
         }
  
         /*
@@ -581,6 +594,10 @@ int vsNext(VerbSeqOptions *vs, VerbFormD *vf1, VerbFormD *vf2)
     }
 
     sqlite3_finalize(res);
+    
+    //pick random result from vf2
+    long rand = randWithMax(resultIdx);
+    copyVFD(&results[rand], vf2);
 
     copyVFD(vf1, &vs->givenForm);
     copyVFD(vf2, &vs->requestedForm);
