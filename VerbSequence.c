@@ -551,8 +551,9 @@ int vsNext(VerbSeqOptions *vs, VerbFormD *vf1, VerbFormD *vf2)
     int numResults = 10;
     int resultIdx = 0;
     VerbFormD results[numResults];
+    int lastFormIDs[numResults];
 
-    char *sql = "SELECT person,number,tense,voice,mood,verbid,formid FROM verbforms WHERE verbid= ?1 ORDER BY lastSeen ASC, RANDOM();";
+    char *sql = "SELECT person,number,tense,voice,mood,verbid,formid,lastSeen FROM verbforms WHERE verbid= ?1 ORDER BY lastSeen ASC, RANDOM();";
     int rc = sqlite3_prepare_v2(db, sql, -1, &res, NULL);
     if (rc == SQLITE_OK) {
         sqlite3_bind_int(res, 1, vf1->verbid);
@@ -562,6 +563,8 @@ int vsNext(VerbSeqOptions *vs, VerbFormD *vf1, VerbFormD *vf2)
     }
     
     int desiredStepsAway = 2;
+    int lastseen = 0;
+    int formid = 0;
     while ( sqlite3_step(res) == SQLITE_ROW )
     {
         vf2->person = (unsigned char)sqlite3_column_int(res, 0);
@@ -570,37 +573,39 @@ int vsNext(VerbSeqOptions *vs, VerbFormD *vf1, VerbFormD *vf2)
         vf2->voice = (unsigned char)sqlite3_column_int(res, 3);
         vf2->mood = (unsigned char)sqlite3_column_int(res, 4);
         vf2->verbid = sqlite3_column_int(res, 5);
-        vs->lastFormID = sqlite3_column_int(res, 6);
+        formid = sqlite3_column_int(res, 6);
+        lastseen = sqlite3_column_int(res, 7);
         
         if (stepsAway(vf1, vf2) == desiredStepsAway && !isBlankOrDashOrFails(vf2) && !mpToMp(vf1, vf2) && isValidFormForUnitD(vf2, vs->topUnit))
         {
-            if (resultIdx <= numResults)
+            if (resultIdx < numResults)
             {
                 copyVFD(vf2, &results[resultIdx]);
+                lastFormIDs[resultIdx] = formid;
                 resultIdx++;
+                
+                 char buffer[1024];
+                 int bufferLen = 0;
+                 getForm2(vf2, buffer, bufferLen, true, false);
+                 fprintf(stderr, "fut subjaaa: %d, %s\n", lastseen, buffer);
             }
             else
             {
                 break;
             }
         }
- 
-        /*
-        char buffer[1024];
-        int bufferLen = 0;
-        int res = getForm2(vf2, buffer, &bufferLen, true, false);
-        fprintf(stderr, "fut subj: %d, %d, %s\n", vf2->verbid, buffer);
-        */
     }
 
     sqlite3_finalize(res);
     
     //pick random result from vf2
-    long rand = randWithMax(resultIdx);
+    long rand = randWithMax(resultIdx); //max is set by last index in array
     copyVFD(&results[rand], vf2);
-
+    vs->lastFormID = lastFormIDs[rand];
+    
     copyVFD(vf1, &vs->givenForm);
     copyVFD(vf2, &vs->requestedForm);
+    
 
     if (vs->gameId != GAME_INCIPIENT && vs->state == STATE_NEW)
     {
@@ -1080,7 +1085,8 @@ bool setHeadAnswer(VerbFormD *vf, bool correct, char *givenAnswer, const char *e
         }
         DEBUG_PRINT("Insert into gameid: %ld\n", vso->gameId);
 
-        if (correct) {
+        if (correct)
+        {
             snprintf(sqlitePrepquery, SQLITEPREPQUERYLEN,
                      " UPDATE verbforms SET lastSeen=datetime('now') WHERE formid=%d;", vso->lastFormID);
             //char *zErrMsg = 0;
@@ -1089,8 +1095,11 @@ bool setHeadAnswer(VerbFormD *vf, bool correct, char *givenAnswer, const char *e
                 DEBUG_PRINT("SQL2 error: %s\n", zErrMsg);
                 sqlite3_free(zErrMsg);
             }
+            else
+            {
+                DEBUG_PRINT("HEAD UPDATED, %d", vso->lastFormID);
+            }
         }
-
     }
     return true;
 }
