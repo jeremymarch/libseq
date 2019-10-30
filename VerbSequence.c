@@ -451,12 +451,15 @@ bool isBlankOrDashOrFails(VerbFormD *vf) {
     vfc.verb = &verbs[vf->verbid];
     
     if (getFormUCS2(&vfc, buffer, &len, bufferlen, true, false)) {
-        if (buffer[0] == 0x2014) //emdash = blank
-            return true;
-        else if (buffer[0] == 0x2010) //hyphen = dash
-            return true;
-        else
-            return false; //ok to ask
+        for (int i = 0; i < len; i++)
+        {
+            //check whole word in case it has alternate forms
+            if (buffer[i] == 0x2014 || buffer[i] == 0x2010) //emdash or hyphen
+            {
+                return true;
+            }
+        }
+        return false; //ok to ask
     }
     else {
         return true; //if fails return true to block form
