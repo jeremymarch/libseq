@@ -454,8 +454,10 @@ bool isBlankOrDashOrFails(VerbFormD *vf) {
         for (int i = 0; i < len; i++)
         {
             //check whole word in case it has alternate forms
-            if (buffer[i] == 0x2014 || buffer[i] == 0x2010) //emdash or hyphen
+            if (buffer[i] == 0x2014 || buffer[i] == 0x002D || buffer[i] == 0x2010) //emdash or hyphen-minus or hyphen
             {
+                //DEBUG_PRINT("found hyphen or blank: %d, %d, %d\n", buffer[i] == 0x2014, buffer[i] == 0x2010, buffer[i] == 0x002D);
+
                 return true;
             }
         }
