@@ -25,13 +25,32 @@ void swSetVerbSeqOptions(const int *persons, const int numPersons, const int *nu
     opt.numVoice = numVoices;
     memmove(opt.moods, moods, numMoods*(sizeof(opt.moods[0])));
     opt.numMood = numMoods;
-
+    
     if (numVerbs < 1) //add verbs by unit
     {
         opt.numVerbs = 0;
-        for (int i = 0; i < numUnits; i++)
+        if (isGame)
         {
-            vsAddVerbsForUnit(&opt, units[i], opt.verbs, &opt.numVerbs, NUM_VERBS);
+            if (topUnit > 20)
+            {
+                topUnit = 20;
+            }
+            else if (topUnit < 2)
+            {
+                topUnit = 2;
+            }
+            printf("top unit: %d", topUnit);
+            for (int i = 0; i < topUnit; i++)
+            {
+                vsAddVerbsForUnit(&opt, i+1, opt.verbs, &opt.numVerbs, NUM_VERBS);
+            }
+        }
+        else
+        {
+            for (int i = 0; i < numUnits; i++)
+            {
+                vsAddVerbsForUnit(&opt, units[i], opt.verbs, &opt.numVerbs, NUM_VERBS);
+            }
         }
         memmove(opt.units, units, numUnits*(sizeof(opt.units[0])));
         opt.numUnits = numUnits;
@@ -47,9 +66,17 @@ void swSetVerbSeqOptions(const int *persons, const int numPersons, const int *nu
     opt.shuffle = shuffle;
     opt.repsPerVerb = (unsigned char) repsPerVerb;
     opt.repNum = -1;
-    if (opt.isHCGame)
+    if (isGame)
     {
         opt.lives = 3;
+    }
+    if (topUnit < 3)
+    {
+        opt.degreesToChange = 1;
+    }
+    else
+    {
+        opt.degreesToChange = 2;
     }
     opt.gameId = GAME_INCIPIENT; //this starts a new game
     

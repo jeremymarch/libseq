@@ -567,7 +567,7 @@ int vsNext(VerbSeqOptions *vs, VerbFormD *vf1, VerbFormD *vf2)
         return 0;
     }
     
-    int desiredStepsAway = 2;
+    //int desiredStepsAway = 2;
     int lastseen = 0;
     int formid = 0;
     while ( sqlite3_step(res) == SQLITE_ROW )
@@ -581,7 +581,7 @@ int vsNext(VerbSeqOptions *vs, VerbFormD *vf1, VerbFormD *vf2)
         formid = sqlite3_column_int(res, 6);
         lastseen = sqlite3_column_int(res, 7);
         
-        if (stepsAway(vf1, vf2) == desiredStepsAway && !isBlankOrDashOrFails(vf2) && !mpToMp(vf1, vf2) && isValidFormForUnitD(vf2, vs->topUnit))
+        if (stepsAway(vf1, vf2) == vs->degreesToChange && !isBlankOrDashOrFails(vf2) && !mpToMp(vf1, vf2) && isValidFormForUnitD(vf2, vs->topUnit))
         {
             if (resultIdx < numResults)
             {
