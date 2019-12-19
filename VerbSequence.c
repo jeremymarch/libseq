@@ -568,7 +568,7 @@ int vsNext(VerbSeqOptions *vs, VerbFormD *vf1, VerbFormD *vf2)
     }
     
     //int desiredStepsAway = 2;
-    int lastseen = 0;
+    long long lastseen = 0;
     int formid = 0;
     while ( sqlite3_step(res) == SQLITE_ROW )
     {
@@ -579,7 +579,7 @@ int vsNext(VerbSeqOptions *vs, VerbFormD *vf1, VerbFormD *vf2)
         vf2->mood = (unsigned char)sqlite3_column_int(res, 4);
         vf2->verbid = sqlite3_column_int(res, 5);
         formid = sqlite3_column_int(res, 6);
-        lastseen = sqlite3_column_int(res, 7);
+        lastseen = sqlite3_column_int64(res, 7);
         
         if (stepsAway(vf1, vf2) == vs->degreesToChange && !isBlankOrDashOrFails(vf2) && !mpToMp(vf1, vf2) && isValidFormForUnitD(vf2, vs->topUnit))
         {
@@ -592,7 +592,7 @@ int vsNext(VerbSeqOptions *vs, VerbFormD *vf1, VerbFormD *vf2)
                  char buffer[1024];
                  int bufferLen = 0;
                  getForm2(vf2, buffer, bufferLen, true, false);
-                 fprintf(stderr, "fut subjaaa: %d, %s\n", lastseen, buffer);
+                fprintf(stderr, "fut subjaaa: %lld, %s\n", lastseen, buffer);
             }
             else
             {
@@ -1095,6 +1095,7 @@ bool setHeadAnswer(VerbFormD *vf, bool correct, char *givenAnswer, const char *e
             snprintf(sqlitePrepquery, SQLITEPREPQUERYLEN,
                      " UPDATE verbforms SET lastSeen=datetime('now') WHERE formid=%d;", vso->lastFormID);
             //char *zErrMsg = 0;
+            //DEBUG_PRINT("SQL2 aaa: %s\n", sqlitePrepquery);
             rc = sqlite3_exec(db, sqlitePrepquery, 0, 0, &zErrMsg);
             if (rc != SQLITE_OK) {
                 DEBUG_PRINT("SQL2 error: %s\n", zErrMsg);
@@ -1222,7 +1223,7 @@ int upgradedb(const char *fromPath, const char *toPath)
     while ( sqlite3_step(res1) == SQLITE_ROW )
     {
         int gameid = sqlite3_column_int(res1, 0);
-        int timest = sqlite3_column_int(res1, 1);
+        long long timest = sqlite3_column_int64(res1, 1);
         int score = sqlite3_column_int(res1, 2);
         int stopUnit = sqlite3_column_int(res1, 3);
         int lives = sqlite3_column_int(res1, 4);
@@ -1238,7 +1239,7 @@ int upgradedb(const char *fromPath, const char *toPath)
         }
         
         sqlite3_bind_int(res2, 1, gameid);
-        sqlite3_bind_int(res2, 2, timest);
+        sqlite3_bind_int64(res2, 2, timest);
         sqlite3_bind_int(res2, 3, score);
         sqlite3_bind_int(res2, 4, stopUnit);
         sqlite3_bind_int(res2, 5, lives);
