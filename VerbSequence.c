@@ -5,6 +5,7 @@
 //  Created by Jeremy on 2/1/16.
 //  Copyright © 2016 Jeremy March. All rights reserved.
 //
+
 #include <stdlib.h> // For random(), RAND_MAX
 #include <time.h>
 #include <string.h>
@@ -15,6 +16,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <utilities.h>
+#include <assert.h>
 #include "VerbSequence.h"
 #include "sqlite3.h"
 
@@ -31,7 +33,7 @@
 //at max difficulty we would use different principal part for every change.
 
 //https://stackoverflow.com/questions/1941307/debug-print-macro-in-c
-#define HCDEBUG
+
 #if defined(HCDEBUG) && ( defined(__ANDROID__) || defined(ANDROID) )
 #include <android/log.h>
 #define  DEBUG_PRINT(...)  __android_log_print(ANDROID_LOG_ERROR, "Hoplite", __VA_ARGS__)
@@ -84,7 +86,7 @@ int u16[9] = {83,84,85,86,87,88,89,90,91};
 int u17[7] = {92,93,94,95,96,97,98};
 int u18[11] = {99,100,101,102,103,104,105,106,107,108,109};
 int u19[10] = {110,111,112,113,114,115,116,117,118,119};
-int u20[5] = {120,/*121,*/122,123,124,125/*,126*/};
+int u20[5] = {120,/*121,*/122,123,124,125/*,126*/}; //exclude dei, xrh
 void vsAddVerbsForUnit(VerbSeqOptions *vs, int unit, int *verbArray, int *verbArrayLen, int verbArrayCapacity)
 {
     int i = 0;
@@ -448,7 +450,7 @@ bool isBlankOrDashOrFails(VerbFormD *vf) {
     vfc.tense = vf->tense;
     vfc.voice = vf->voice;
     vfc.mood = vf->mood;
-    vfc.verb = &verbs[vf->verbid];
+    vfc.verb = (Verb *) &verbs[vf->verbid];
     
     if (getFormUCS2(&vfc, buffer, &len, bufferlen, true, false)) {
         for (int i = 0; i < len; i++)
@@ -477,7 +479,7 @@ int vsNext(VerbSeqOptions *vs, VerbFormD *vf1, VerbFormD *vf2)
     }
 
     vs->state = STATE_NEW;
-    //assert(verbIDs.count > 0, "Error: getNext no verbIDs")
+
     if (vs->numVerbs < 1)
     {
         vs->verbs[0] = 0;
@@ -558,7 +560,8 @@ int vsNext(VerbSeqOptions *vs, VerbFormD *vf1, VerbFormD *vf2)
     VerbFormD results[numResults];
     int lastFormIDs[numResults];
 
-    char *sql = "SELECT person,number,tense,voice,mood,verbid,formid,lastSeen FROM verbforms WHERE verbid= ?1 ORDER BY lastSeen ASC, RANDOM();";
+    char *sql = "SELECT person,number,tense,voice,mood,verbid,formid,datetime(lastSeen, 'unixepoch', 'localtime') FROM verbforms WHERE verbid= ?1 ORDER BY lastSeen ASC, RANDOM();";
+
     int rc = sqlite3_prepare_v2(db, sql, -1, &res, NULL);
     if (rc == SQLITE_OK) {
         sqlite3_bind_int(res, 1, vf1->verbid);
@@ -568,7 +571,8 @@ int vsNext(VerbSeqOptions *vs, VerbFormD *vf1, VerbFormD *vf2)
     }
     
     //int desiredStepsAway = 2;
-    long long lastseen = 0;
+    //long long lastseen = 0;
+    const unsigned char *lastlast;
     int formid = 0;
     while ( sqlite3_step(res) == SQLITE_ROW )
     {
@@ -579,8 +583,7 @@ int vsNext(VerbSeqOptions *vs, VerbFormD *vf1, VerbFormD *vf2)
         vf2->mood = (unsigned char)sqlite3_column_int(res, 4);
         vf2->verbid = sqlite3_column_int(res, 5);
         formid = sqlite3_column_int(res, 6);
-        lastseen = sqlite3_column_int64(res, 7);
-        
+        lastlast = sqlite3_column_text(res, 7);
         if (stepsAway(vf1, vf2) == vs->degreesToChange && !isBlankOrDashOrFails(vf2) && !mpToMp(vf1, vf2) && isValidFormForUnitD(vf2, vs->topUnit))
         {
             if (resultIdx < numResults)
@@ -589,10 +592,10 @@ int vsNext(VerbSeqOptions *vs, VerbFormD *vf1, VerbFormD *vf2)
                 lastFormIDs[resultIdx] = formid;
                 resultIdx++;
                 
-                 char buffer[1024];
-                 int bufferLen = 0;
-                 getForm2(vf2, buffer, bufferLen, true, false);
-                fprintf(stderr, "fut subjaaa: %lld, %s\n", lastseen, buffer);
+                char buffer[1024];
+                int bufferLen = 0;
+                getForm2(vf2, buffer, bufferLen, true, false);
+                DEBUG_PRINT("verb queue: %s, %s\n", lastlast, buffer);
             }
             else
             {
@@ -653,7 +656,7 @@ bool isValidFormForUnitD(VerbFormD *vf, int unit)
     vfc.tense = vf->tense;
     vfc.voice = vf->voice;
     vfc.mood = vf->mood;
-    vfc.verb = &verbs[vf->verbid];
+    vfc.verb = (Verb *) &verbs[vf->verbid];
 
     return isValidFormForUnit(&vfc, unit);
 }
@@ -886,14 +889,18 @@ int vsInit(VerbSeqOptions *vs, const char *path)
     int vfcount = sqliteTableCount(verbForms);
 
     DEBUG_PRINT("exists %d, count %d\n", exists, vfcount);
+    assert(vfcount == 21117);
+    assert(sqliteCheckFutSubj() == 0);
+    //DEBUG_PRINT("COUNT FUT SUBJ: %d\n", sqliteCheckFutSubj());
 
-    if ( !exists || vfcount < 1 || sqliteCheckFutSubj() > 0)
+    if ( !exists || vfcount < 1 )
     {
         setupVerbFormsTable();
         DEBUG_PRINT("created verb forms table\n");
     }
     
-    DEBUG_PRINT("COUNT FUT SUBJ: %d\n", sqliteCheckFutSubj());
+    assert(sqliteCheckFutSubj() == 0);
+    //DEBUG_PRINT("COUNT FUT SUBJ: %d\n", sqliteCheckFutSubj());
 
     DEBUG_PRINT("sqlite success, version: %s\n", SQLITE_VERSION);
     return 0;
@@ -932,7 +939,7 @@ bool sqliteTableExists(char *tbl_name)
 int sqliteCheckFutSubj(void)
 {
     sqlite3_stmt *stmt;
-    snprintf(sqlitePrepquery, SQLITEPREPQUERYLEN, "SELECT count(*) FROM verbforms WHERE tense=2 AND mood= 1;");
+    snprintf(sqlitePrepquery, SQLITEPREPQUERYLEN, "SELECT count(*) FROM verbforms WHERE tense=2 AND mood=1;");
     
     int rc = sqlite3_prepare_v2(db, sqlitePrepquery, -1, &stmt, NULL);
     if (rc != SQLITE_OK) {
@@ -999,7 +1006,8 @@ bool setupVerbFormsTable(void)
     "mood INT1 NOT NULL, " \
     "verbid INT NOT NULL " \
     "); " \
-    "CREATE INDEX verbididx ON verbforms(verbid); ";
+    "CREATE INDEX verbididx ON verbforms(verbid); " \
+    "CREATE INDEX lastSeenidx ON verbforms(lastSeen); ";
     //"UPDATE games SET score = -1, lives = -1 WHERE gameid == 1;";
 
     int rc = sqlite3_exec(db, create, NULL, NULL, &zErrMsg);
@@ -1011,7 +1019,7 @@ bool setupVerbFormsTable(void)
     }
 
     sqlite3_stmt *stmt;
-    rc = sqlite3_prepare_v2(db, "INSERT INTO verbforms  (lastSeen,difficulty,defaultDifficulty,person,number,tense,voice,mood,verbid) VALUES (datetime('now'), ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8);", -1, &stmt, NULL);
+    rc = sqlite3_prepare_v2(db, "INSERT INTO verbforms  (lastSeen,difficulty,defaultDifficulty,person,number,tense,voice,mood,verbid) VALUES (cast(strftime('%s','now') as int), ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8);", -1, &stmt, NULL);
 
     if (rc != SQLITE_OK)
     {
@@ -1092,8 +1100,9 @@ bool setHeadAnswer(VerbFormD *vf, bool correct, char *givenAnswer, const char *e
 
         if (correct)
         {
+            //https://stackoverflow.com/questions/11556546/sqlite-storing-default-timestamp-as-unixepoch
             snprintf(sqlitePrepquery, SQLITEPREPQUERYLEN,
-                     " UPDATE verbforms SET lastSeen=datetime('now') WHERE formid=%d;", vso->lastFormID);
+                     " UPDATE verbforms SET lastSeen=cast(strftime('%%s','now') as int) WHERE formid=%d;", vso->lastFormID);
             //char *zErrMsg = 0;
             //DEBUG_PRINT("SQL2 aaa: %s\n", sqlitePrepquery);
             rc = sqlite3_exec(db, sqlitePrepquery, 0, 0, &zErrMsg);
