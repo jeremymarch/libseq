@@ -25,20 +25,21 @@ void swSetVerbSeqOptions(const int *persons, const int numPersons, const int *nu
     opt.numVoice = numVoices;
     memmove(opt.moods, moods, numMoods*(sizeof(opt.moods[0])));
     opt.numMood = numMoods;
-    
+
+    if (topUnit > 20)
+    {
+        topUnit = 20;
+    }
+    else if (topUnit < 2)
+    {
+        topUnit = 2;
+    }
+
     if (numVerbs < 1) //add verbs by unit
     {
         opt.numVerbs = 0;
         if (isGame)
         {
-            if (topUnit > 20)
-            {
-                topUnit = 20;
-            }
-            else if (topUnit < 2)
-            {
-                topUnit = 2;
-            }
             printf("top unit: %d", topUnit);
             for (int i = 0; i < topUnit; i++)
             {

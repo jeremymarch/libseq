@@ -36,7 +36,7 @@
 
 #if defined(HCDEBUG) && ( defined(__ANDROID__) || defined(ANDROID) )
 #include <android/log.h>
-#define  DEBUG_PRINT(...)  __android_log_print(ANDROID_LOG_ERROR, "Hoplite", __VA_ARGS__)
+#define  DEBUG_PRINT(...)  ((void)__android_log_print(ANDROID_LOG_ERROR, "Hoplite", __VA_ARGS__))
 #elif defined(HCDEBUG)
 #define DEBUG_PRINT(fmt, args...) fprintf(stderr, "DEBUG: %s:%d:%s(): " fmt, \
 __FILE__, __LINE__, __func__, ##args)
@@ -538,7 +538,7 @@ int vsNext(VerbSeqOptions *vs, VerbFormD *vf1, VerbFormD *vf2)
 
     vf1->verbid = vs->verbs[vs->currentVerbIdx];
 
-    DEBUG_PRINT("crep: %d, %d, %d\n", vs->repNum, vs->repsPerVerb, vs->state);
+    DEBUG_PRINT("verb rep: %d, reps per verb: %d, state: %d\n", vs->repNum, vs->repsPerVerb, vs->state);
 
     if (vs->state != STATE_NEW)
     {
@@ -560,7 +560,8 @@ int vsNext(VerbSeqOptions *vs, VerbFormD *vf1, VerbFormD *vf2)
     VerbFormD results[numResults];
     int lastFormIDs[numResults];
 
-    char *sql = "SELECT person,number,tense,voice,mood,verbid,formid,datetime(lastSeen, 'unixepoch', 'localtime') FROM verbforms WHERE verbid= ?1 ORDER BY lastSeen ASC, RANDOM();";
+    char *sql = "SELECT person,number,tense,voice,mood,verbid,formid,datetime(lastSeen, 'unixepoch', 'localtime') FROM verbforms WHERE verbid = ?1 ORDER BY lastSeen ASC, RANDOM();";
+    assert(vf1->verbid > -1 && vf1->verbid < NUM_VERBS);
 
     int rc = sqlite3_prepare_v2(db, sql, -1, &res, NULL);
     if (rc == SQLITE_OK) {
@@ -569,6 +570,7 @@ int vsNext(VerbSeqOptions *vs, VerbFormD *vf1, VerbFormD *vf2)
         DEBUG_PRINT("Failed to execute statement: %s\n", sqlite3_errmsg(db));
         return 0;
     }
+    DEBUG_PRINT("sql: %d, %s\n", vf1->verbid, sql);
     
     //int desiredStepsAway = 2;
     //long long lastseen = 0;
@@ -608,6 +610,8 @@ int vsNext(VerbSeqOptions *vs, VerbFormD *vf1, VerbFormD *vf2)
     
     //pick random result from vf2
     long rand = randWithMax(resultIdx); //max is set by last index in array
+    DEBUG_PRINT("RAND %d, MAX %d", rand, resultIdx);
+    assert(resultIdx > 0);
     copyVFD(&results[rand], vf2);
     vs->lastFormID = lastFormIDs[rand];
     
@@ -809,9 +813,21 @@ int vsInit(VerbSeqOptions *vs, const char *path)
 
     snprintf(dbpath, dbpathLen - 1, "%s", path);
 
-    stat(dbpath, &st);
+    char *dbp2 = "/data/user/0/com.philolog.hc/databases";
+    int32_t res = stat(dbp2, &st);
     off_t size = st.st_size;
-    
+
+    if (0 == res && (st.st_mode & S_IFDIR)){
+        DEBUG_PRINT("Database directory already exists in path:%s", dbp2);
+    }else{
+        DEBUG_PRINT("Creating database path:%s", dbp2);
+        int status = mkdir(dbp2, S_IRWXU | S_IRWXG | S_IWOTH | S_IXOTH);
+        if(status != 0){
+            DEBUG_PRINT("Error occurred while creating database path : %s", dbp2);
+            return 9;
+        }
+    }
+
     if (db)
     {
         sqlite3_close(db);
@@ -821,7 +837,7 @@ int vsInit(VerbSeqOptions *vs, const char *path)
     int rc = sqlite3_open(dbpath, &db);
     if( rc != SQLITE_OK )
     {
-        DEBUG_PRINT("Can't open database: %s\n", sqlite3_errmsg(db));
+        DEBUG_PRINT("Can't open database: %s. %s\n", sqlite3_errmsg(db), dbpath);
         sqlite3_close(db);
         db = NULL;
         return 1;

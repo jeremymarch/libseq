@@ -39,9 +39,7 @@ Java_com_philolog_hc_VerbSequence_setupUnits( JNIEnv* env, jobject thiz, jboolea
     int baLength = (*env)->GetArrayLength(env, arr);
 
     opt.numUnits = 0;
-    int verbsLen = 0;
     opt.topUnit = 2;
-    bool atLeastOne = false;
     for (int i = 1; i < baLength; i++) { //i = 1 to skip unit 1
         if (ba[i] == JNI_TRUE) {
             if( i + 1 > opt.topUnit )
@@ -50,18 +48,36 @@ Java_com_philolog_hc_VerbSequence_setupUnits( JNIEnv* env, jobject thiz, jboolea
             }
             opt.units[opt.numUnits] = i + 1;
             opt.numUnits++;
-            vsAddVerbsForUnit(&opt, i + 1, opt.verbs, &verbsLen, NUM_VERBS);
-            atLeastOne = true;
         }
     }
-    if (!atLeastOne) {
-        opt.verbs[0] = 0;
-        opt.verbs[1] = 1;
-        opt.verbs[2] = 2;
-        opt.verbs[3] = 3;
-        opt.numVerbs = 4;
-    } else {
-        opt.numVerbs = verbsLen;
+
+    if (opt.numUnits < 1)
+    {
+        opt.units[0] = 2;
+        opt.numUnits = 1;
+    }
+
+    opt.numVerbs = 0;
+    if (isHCGame)
+    {
+        printf("top unit: %d", opt.topUnit);
+        for (int i = 0; i < opt.topUnit; i++)
+        {
+            vsAddVerbsForUnit(&opt, i+1, opt.verbs, &opt.numVerbs, NUM_VERBS);
+        }
+    }
+    else
+    {
+        for (int i = 0; i < opt.numUnits; i++) {
+            vsAddVerbsForUnit(&opt, opt.units[i], opt.verbs, &opt.numVerbs, NUM_VERBS);
+        }
+    }
+    if (opt.topUnit < 3)
+    {
+        opt.degreesToChange = 1;
+    }
+    else {
+        opt.degreesToChange = 2;
     }
 
     opt.repsPerVerb = 4;
@@ -71,8 +87,8 @@ Java_com_philolog_hc_VerbSequence_setupUnits( JNIEnv* env, jobject thiz, jboolea
     }
     LOGE("num: %d ", opt.numVerbs);
 */
-    opt.isHCGame = isHCGame;
-    vsReset(&opt, isHCGame);
+    opt.isHCGame = (isHCGame == JNI_TRUE);
+    vsReset(&opt, (isHCGame == JNI_TRUE) );
     //opt.practiceVerbID = -1;
 
     (*env)->ReleaseBooleanArrayElements(env, arr, ba, 0);
@@ -93,30 +109,29 @@ Java_com_philolog_hc_VerbSequence_upgradedb( JNIEnv* env, jobject thiz, jstring 
 JNIEXPORT jint JNICALL
 Java_com_philolog_hc_VerbSequence_vsNext( JNIEnv* env, jobject thiz, jobject gv1, jobject gv2 )
 {
-    VerbFormD vf1, vf2;
+    VerbFormD vf1;
+    VerbFormD vf2;
     jint ret = 0;
-    int seq = 0;
     jfieldID fid;
-    jclass gvcls, verbcls;
-    jobject verbObj;
+    jclass gvcls;
 
     //get vf1
     gvcls = (*env)->GetObjectClass(env, gv1);
 
     fid = (*env)->GetFieldID(env,gvcls,"person","I");
-    vf1.person = (*env)->GetIntField(env, gv1 ,fid);
+    vf1.person = (unsigned char) (*env)->GetIntField(env, gv1 ,fid);
 
     fid = (*env)->GetFieldID(env,gvcls,"number","I");
-    vf1.number = (*env)->GetIntField(env, gv1 ,fid);
+    vf1.number = (unsigned char) (*env)->GetIntField(env, gv1 ,fid);
 
     fid = (*env)->GetFieldID(env,gvcls,"tense","I");
-    vf1.tense = (*env)->GetIntField(env, gv1 ,fid);
+    vf1.tense = (unsigned char) (*env)->GetIntField(env, gv1 ,fid);
 
     fid = (*env)->GetFieldID(env,gvcls,"voice","I");
-    vf1.voice = (*env)->GetIntField(env, gv1 ,fid);
+    vf1.voice = (unsigned char) (*env)->GetIntField(env, gv1 ,fid);
 
     fid = (*env)->GetFieldID(env,gvcls,"mood","I");
-    vf1.mood = (*env)->GetIntField(env, gv1 ,fid);
+    vf1.mood = (unsigned char) (*env)->GetIntField(env, gv1 ,fid);
 
     fid = (*env)->GetFieldID(env,gvcls,"verbid","I");
     vf1.verbid = (*env)->GetIntField(env, gv1 ,fid);
@@ -125,19 +140,19 @@ Java_com_philolog_hc_VerbSequence_vsNext( JNIEnv* env, jobject thiz, jobject gv1
     gvcls = (*env)->GetObjectClass(env, gv2);
 
     fid = (*env)->GetFieldID(env,gvcls,"person","I");
-    vf2.person = (*env)->GetIntField(env, gv2 ,fid);
+    vf2.person = (unsigned char) (*env)->GetIntField(env, gv2 ,fid);
 
     fid = (*env)->GetFieldID(env,gvcls,"number","I");
-    vf2.number = (*env)->GetIntField(env, gv2 ,fid);
+    vf2.number = (unsigned char) (*env)->GetIntField(env, gv2 ,fid);
 
     fid = (*env)->GetFieldID(env,gvcls,"tense","I");
-    vf2.tense = (*env)->GetIntField(env, gv2 ,fid);
+    vf2.tense = (unsigned char) (*env)->GetIntField(env, gv2 ,fid);
 
     fid = (*env)->GetFieldID(env,gvcls,"voice","I");
-    vf2.voice = (*env)->GetIntField(env, gv2 ,fid);
+    vf2.voice = (unsigned char) (*env)->GetIntField(env, gv2 ,fid);
 
     fid = (*env)->GetFieldID(env,gvcls,"mood","I");
-    vf2.mood = (*env)->GetIntField(env, gv2 ,fid);
+    vf2.mood = (unsigned char) (*env)->GetIntField(env, gv2 ,fid);
 
     fid = (*env)->GetFieldID(env,gvcls,"verbid","I");
     vf2.verbid = (*env)->GetIntField(env, gv2 ,fid);
@@ -257,26 +272,25 @@ Java_com_philolog_hc_GreekVerb_getForm( JNIEnv* env, jobject thiz, jint mf, jint
     cls = (*env)->GetObjectClass(env, thiz);
 
     fid = (*env)->GetFieldID(env,cls,"person","I");
-    vf.person = (*env)->GetIntField(env, thiz ,fid);
+    vf.person = (unsigned char) (*env)->GetIntField(env, thiz ,fid);
 
     fid = (*env)->GetFieldID(env,cls,"number","I");
-    vf.number = (*env)->GetIntField(env, thiz ,fid);
+    vf.number = (unsigned char) (*env)->GetIntField(env, thiz ,fid);
 
     fid = (*env)->GetFieldID(env,cls,"tense","I");
-    vf.tense = (*env)->GetIntField(env, thiz ,fid);
+    vf.tense = (unsigned char) (*env)->GetIntField(env, thiz ,fid);
 
     fid = (*env)->GetFieldID(env,cls,"voice","I");
-    vf.voice = (*env)->GetIntField(env, thiz ,fid);
+    vf.voice = (unsigned char) (*env)->GetIntField(env, thiz ,fid);
 
     fid = (*env)->GetFieldID(env,cls,"mood","I");
-    vf.mood = (*env)->GetIntField(env, thiz ,fid);
+    vf.mood = (unsigned char) (*env)->GetIntField(env, thiz ,fid);
 
     fid = (*env)->GetFieldID(env,cls,"verbid","I");
     vf.verbid = (*env)->GetIntField(env, thiz ,fid);
 
-    //__android_log_print(ANDROID_LOG_VERBOSE, "MyApp", "Here 2");
-
 /*
+ * //To force a form:
     vf.verb = &verbs[45];
     vf.person = FIRST;
     vf.number = SINGULAR;
@@ -286,24 +300,14 @@ Java_com_philolog_hc_GreekVerb_getForm( JNIEnv* env, jobject thiz, jint mf, jint
 */
     int bufferLen = 2048;
     char buffer[bufferLen];
-    //long units[11] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
-    //Verb *v = getRandomVerb(units, 11);
 
-    //vf.verb = v;//&verbs[15];
-    //do {
-        //generateForm(&vf); }
-     //while (!
-    //__android_log_print(ANDROID_LOG_VERBOSE, "MyApp", "Here 3 %d %d %d %d %d %d", vf.person, vf.number, vf.tense, vf.voice, vf.mood, vf.verb->verbid);
+    LOGE("JNI getForm: %d %d %d %d %d %d", vf.person, vf.number, vf.tense, vf.voice, vf.mood, vf.verbid);
 
     if (!getForm2(&vf, buffer, bufferLen, mf, decompose)) //don't look here because will get stuck for deponents e.g.
     {
-        LOGE("AAA Returned 0 %d", bufferLen);
+        LOGE("JNI getForm returned 0, bufferLen %d", bufferLen);
         return (*env)->NewStringUTF(env, buffer);
     }
-//__android_log_print(ANDROID_LOG_VERBOSE, "MyApp", "Here 4");
-    //__android_log_print(ANDROID_LOG_VERBOSE, "MyApp", "The value of n is %s", buffer);
-
-    //stpcpy(buffer, "ψψᾱ́ψψ"); //this works, so not a problem with conversion to utf16
 
     return (*env)->NewStringUTF(env, buffer);
 }
@@ -313,23 +317,24 @@ Java_com_philolog_hc_GreekVerb_getAbbrevDescription( JNIEnv* env, jobject thiz )
 {
     VerbFormC vf;
     jfieldID fid;
-    jclass cls, cls2;
+    jclass cls;
+    jclass cls2;
     cls = (*env)->GetObjectClass(env, thiz);
 
     fid = (*env)->GetFieldID(env,cls,"person","I");
-    vf.person = (*env)->GetIntField(env, thiz ,fid);
+    vf.person = (unsigned char) (*env)->GetIntField(env, thiz ,fid);
 
     fid = (*env)->GetFieldID(env,cls,"number","I");
-    vf.number = (*env)->GetIntField(env, thiz ,fid);
+    vf.number = (unsigned char) (*env)->GetIntField(env, thiz ,fid);
 
     fid = (*env)->GetFieldID(env,cls,"tense","I");
-    vf.tense = (*env)->GetIntField(env, thiz ,fid);
+    vf.tense = (unsigned char) (*env)->GetIntField(env, thiz ,fid);
 
     fid = (*env)->GetFieldID(env,cls,"voice","I");
-    vf.voice = (*env)->GetIntField(env, thiz ,fid);
+    vf.voice = (unsigned char) (*env)->GetIntField(env, thiz ,fid);
 
     fid = (*env)->GetFieldID(env,cls,"mood","I");
-    vf.mood = (*env)->GetIntField(env, thiz ,fid);
+    vf.mood = (unsigned char) (*env)->GetIntField(env, thiz ,fid);
 
     jobject verbObj;
     fid = (*env)->GetFieldID(env,cls,"verb","Lcom/philolog/hc/Verb;");
@@ -337,107 +342,22 @@ Java_com_philolog_hc_GreekVerb_getAbbrevDescription( JNIEnv* env, jobject thiz )
     cls2 = (*env)->GetObjectClass(env, verbObj);
     fid = (*env)->GetFieldID(env,cls2,"verbId","I");
     jint verbid = (*env)->GetIntField(env, verbObj ,fid);
-    vf.verb = &verbs[verbid];
+    vf.verb = (Verb *) &verbs[verbid];
 
     int bufferLen = 2048;
     char buffer[bufferLen];
+
+    LOGE("TESTING: %d, %d, %d, %d, %d, %d", vf.person, vf.number, vf.tense, vf.voice, vf.mood, vf.verb->verbid);
 
     getAbbrevDescription(&vf, buffer, bufferLen);
 
     return (*env)->NewStringUTF(env, buffer);
 }
 
-/*
-JNIEXPORT void JNICALL
-Java_com_philolog_hc_GreekVerb_generateForm( JNIEnv* env, jobject thiz )
-{
-    jfieldID fid;
-    jclass cls, cls2;
-    VerbFormC vf;
-    jobject verbObj;
-
-    cls = (*env)->GetObjectClass(env, thiz);
-
-    fid = (*env)->GetFieldID(env,cls,"verb","Lcom/philolog/hc/Verb;");
-    verbObj = (*env)->GetObjectField(env, thiz ,fid);
-
-    cls2 = (*env)->GetObjectClass(env, verbObj);
-    fid = (*env)->GetFieldID(env,cls2,"verbId","I");
-    jint verbid = (*env)->GetIntField(env, verbObj ,fid);
-
-    vf.verb = &verbs[verbid];
-
-    generateForm(&vf);
-
-    fid = (*env)->GetFieldID(env,cls,"person","I");
-    (*env)->SetIntField(env, thiz ,fid, vf.person);
-
-    fid = (*env)->GetFieldID(env,cls,"number","I");
-    (*env)->SetIntField(env, thiz ,fid, vf.number);
-
-    fid = (*env)->GetFieldID(env,cls,"tense","I");
-    (*env)->SetIntField(env, thiz ,fid, vf.tense);
-
-    fid = (*env)->GetFieldID(env,cls,"voice","I");
-    (*env)->SetIntField(env, thiz ,fid, vf.voice);
-
-    fid = (*env)->GetFieldID(env,cls,"mood","I");
-    (*env)->SetIntField(env, thiz ,fid, vf.mood);
-}
-*/
-
-/*
-JNIEXPORT void JNICALL
-Java_com_philolog_hc_GreekVerb_changeFormByDegrees( JNIEnv* env, jobject thiz, jint degrees )
-{
-    VerbFormC vf;
-    jfieldID fid;
-    jclass cls, cls2;
-    cls = (*env)->GetObjectClass(env, thiz);
-
-    fid = (*env)->GetFieldID(env,cls,"person","I");
-    vf.person = (*env)->GetIntField(env, thiz ,fid);
-
-    fid = (*env)->GetFieldID(env,cls,"number","I");
-    vf.number = (*env)->GetIntField(env, thiz ,fid);
-
-    fid = (*env)->GetFieldID(env,cls,"tense","I");
-    vf.tense = (*env)->GetIntField(env, thiz ,fid);
-
-    fid = (*env)->GetFieldID(env,cls,"voice","I");
-    vf.voice = (*env)->GetIntField(env, thiz ,fid);
-
-    fid = (*env)->GetFieldID(env,cls,"mood","I");
-    vf.mood = (*env)->GetIntField(env, thiz ,fid);
-
-    //FIX ME, or is this right?
-    jobject verbObj;
-    fid = (*env)->GetFieldID(env,cls,"verb","Lcom/philolog/hc/Verb;");
-    verbObj = (*env)->GetObjectField(env, thiz ,fid);
-    cls2 = (*env)->GetObjectClass(env, verbObj);
-    fid = (*env)->GetFieldID(env,cls2,"verbId","I");
-    jint verbid = (*env)->GetIntField(env, verbObj ,fid);
-    vf.verb = &verbs[verbid];
-
-    changeFormByDegrees(&vf, degrees);
-
-    fid = (*env)->GetFieldID(env, cls, "person", "I");
-    (*env)->SetIntField(env, thiz, fid, vf.person);
-
-    fid = (*env)->GetFieldID(env, cls, "number", "I");
-    (*env)->SetIntField(env, thiz, fid, vf.number);
-
-    fid = (*env)->GetFieldID(env, cls, "tense", "I");
-    (*env)->SetIntField(env, thiz, fid, vf.tense);
-
-    fid = (*env)->GetFieldID(env, cls, "voice", "I");
-    (*env)->SetIntField(env, thiz, fid, vf.voice);
-}
-*/
 JNIEXPORT void JNICALL
 Java_com_philolog_hc_Verb_getVerb( JNIEnv* env, jobject thiz, jint verbId )
 {
-    Verb *v = &verbs[verbId];
+    Verb *v = (Verb *) &verbs[verbId];
 
     jfieldID fid;
     jclass cls;
@@ -515,12 +435,12 @@ Java_com_philolog_hc_Verb_deponentType( JNIEnv* env, jobject thiz ) {
     fid = (*env)->GetFieldID(env,cls,"verbId","I");
     int verbId = (*env)->GetIntField(env, thiz ,fid);
 
-    Verb *v = &verbs[verbId];
+    Verb *v = (Verb *) &verbs[verbId];
     return deponentType(v);
 }
 
 JNIEXPORT jstring JNICALL
-Java_com_philolog_hc_GreekVerb_addAccent( JNIEnv* env, jobject thiz, jint accent, jstring *str ) {
+Java_com_philolog_hc_GreekVerb_addAccent( JNIEnv* env, jobject thiz, jint accent, jstring str ) {
     int bufferSize = 1024;
     char buffer[bufferSize];
     UCS2 ucs2[bufferSize];
@@ -531,7 +451,7 @@ Java_com_philolog_hc_GreekVerb_addAccent( JNIEnv* env, jobject thiz, jint accent
 
     if (ucs2[0] != COMBINING_ACUTE && ucs2[0] != COMBINING_MACRON && ucs2[0] != COMBINING_ROUGH_BREATHING && ucs2[0] != COMBINING_SMOOTH_BREATHING) {
         accentSyllable(ucs2, 0, &ucs2Len, accent, true, PRECOMPOSED_HC_MODE);
-        ucs2_to_utf8_string(ucs2, ucs2Len, buffer);
+        ucs2_to_utf8_string(ucs2, ucs2Len, (unsigned char*)buffer);
     }
     else
     {
@@ -541,4 +461,4 @@ Java_com_philolog_hc_GreekVerb_addAccent( JNIEnv* env, jobject thiz, jint accent
     return (*env)->NewStringUTF(env, buffer);
 }
 
-#endif
+#endif //end #if ANDROID
