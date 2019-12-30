@@ -809,24 +809,30 @@ int vsInit(VerbSeqOptions *vs, const char *path)
 {
     unsigned long dbpathLen = strlen(path) + 12;
     char dbpath[dbpathLen];
-    struct stat st;
-
     snprintf(dbpath, dbpathLen - 1, "%s", path);
 
-    char *dbp2 = "/data/user/0/com.philolog.hc/databases";
-    int32_t res = stat(dbp2, &st);
-    long long int size = st.st_size;
-
+    long long int size = 0;
+#ifdef HCDEBUG
+    //char *dbp2 = "/data/user/0/com.philolog.hc/databases";
+    struct stat64 st;
+    int32_t res = stat64(dbpath, &st);
+    if (res == 0) //0 for success
+    {
+        size = st.st_size;
+    }
+    /*
     if (0 == res && (st.st_mode & S_IFDIR)){
         DEBUG_PRINT("Database directory already exists in path:%s", dbp2);
     }else{
-        DEBUG_PRINT("Creating database path:%s", dbp2);
-        int status = mkdir(dbp2, S_IRWXU | S_IRWXG | S_IWOTH | S_IXOTH);
+        DEBUG_PRINT("Creating database path:%s", dbpath);
+        int status = mkdir(dbpath, S_IRWXU | S_IRWXG | S_IWOTH | S_IXOTH);
         if(status != 0){
-            DEBUG_PRINT("Error occurred while creating database path : %s", dbp2);
+            DEBUG_PRINT("Error occurred while creating database path : %s", dbpath);
             return 9;
         }
     }
+    */
+#endif
 
     if (db)
     {
