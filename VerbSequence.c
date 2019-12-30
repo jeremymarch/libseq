@@ -804,6 +804,23 @@ void vsClose(void)
 
 int sqliteCheckFutSubj(void);
 
+long long getDBFileSize(char *path)
+{
+    long long int size = 0;
+#if defined(__ANDROID__) || defined(ANDROID)
+    struct stat64 st;
+    int32_t res = stat64(path, &st);
+#else
+    struct stat st;
+    int32_t res = stat(path, &st);
+#endif
+    if (res == 0) //0 for success
+    {
+        size = st.st_size;
+    }
+    return size;
+}
+
 //returns 0 on success, error code otherwise
 int vsInit(VerbSeqOptions *vs, const char *path)
 {
@@ -814,12 +831,7 @@ int vsInit(VerbSeqOptions *vs, const char *path)
     long long int size = 0;
 #ifdef HCDEBUG
     //char *dbp2 = "/data/user/0/com.philolog.hc/databases";
-    struct stat64 st;
-    int32_t res = stat64(dbpath, &st);
-    if (res == 0) //0 for success
-    {
-        size = st.st_size;
-    }
+    size = getDBFileSize(dbpath);
     /*
     if (0 == res && (st.st_mode & S_IFDIR)){
         DEBUG_PRINT("Database directory already exists in path:%s", dbp2);
