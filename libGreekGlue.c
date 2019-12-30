@@ -347,7 +347,7 @@ Java_com_philolog_hc_GreekVerb_getAbbrevDescription( JNIEnv* env, jobject thiz )
     int bufferLen = 2048;
     char buffer[bufferLen];
 
-    LOGE("TESTING: %d, %d, %d, %d, %d, %d", vf.person, vf.number, vf.tense, vf.voice, vf.mood, vf.verb->verbid);
+    LOGE("JNI getAbbrevDescription: %d, %d, %d, %d, %d, %d", vf.person, vf.number, vf.tense, vf.voice, vf.mood, vf.verb->verbid);
 
     getAbbrevDescription(&vf, buffer, bufferLen);
 
@@ -449,7 +449,7 @@ Java_com_philolog_hc_GreekVerb_addAccent( JNIEnv* env, jobject thiz, jint accent
     const char *letters = (*env)->GetStringUTFChars(env, str, NULL);
     utf8_to_ucs2_string((const unsigned char *)letters, ucs2, &ucs2Len);
 
-    if (ucs2[0] != COMBINING_ACUTE && ucs2[0] != COMBINING_MACRON && ucs2[0] != COMBINING_ROUGH_BREATHING && ucs2[0] != COMBINING_SMOOTH_BREATHING) {
+    if (ucs2[0] != COMBINING_ACUTE && ucs2[0] != COMBINING_MACRON && ucs2[0] != COMBINING_ROUGH_BREATHING && ucs2[0] != COMBINING_SMOOTH_BREATHING && ucs2[0] != COMBINING_IOTA_SUBSCRIPT && ucs2[0] != COMBINING_CIRCUMFLEX  && ucs2[0] != COMBINING_GRAVE  && ucs2[0] != COMBINING_DIAERESIS  && ucs2[0] != COMBINING_BREVE) {
         accentSyllable(ucs2, 0, &ucs2Len, accent, true, PRECOMPOSED_HC_MODE);
         ucs2_to_utf8_string(ucs2, ucs2Len, (unsigned char*)buffer);
     }

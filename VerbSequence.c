@@ -815,7 +815,7 @@ int vsInit(VerbSeqOptions *vs, const char *path)
 
     char *dbp2 = "/data/user/0/com.philolog.hc/databases";
     int32_t res = stat(dbp2, &st);
-    off_t size = st.st_size;
+    long long int size = st.st_size;
 
     if (0 == res && (st.st_mode & S_IFDIR)){
         DEBUG_PRINT("Database directory already exists in path:%s", dbp2);
