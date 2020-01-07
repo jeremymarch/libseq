@@ -610,15 +610,21 @@ int vsNext(VerbSeqOptions *vs, VerbFormD *vf1, VerbFormD *vf2)
     
     //pick random result from vf2
     long rand = randWithMax(resultIdx); //max is set by last index in array
-    DEBUG_PRINT("RAND %d, MAX %d", rand, resultIdx);
+    DEBUG_PRINT("RAND %ld, MAX %d", rand, resultIdx);
     assert(resultIdx > 0);
     copyVFD(&results[rand], vf2);
     vs->lastFormID = lastFormIDs[rand];
     
     copyVFD(vf1, &vs->givenForm);
     copyVFD(vf2, &vs->requestedForm);
-    
-
+/*
+ for testing
+    vf2->person = SECOND;
+    vf2->number = SINGULAR;
+    vf2->tense = FUTURE;
+    vf2->voice = MIDDLE;
+    vf2->mood = INDICATIVE;
+*/
     if (vs->gameId != GAME_INCIPIENT && vs->state == STATE_NEW)
     {
         setHeadAnswer(&vs->givenForm, true, "START", NULL, vs);
