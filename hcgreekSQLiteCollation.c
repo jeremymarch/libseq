@@ -42,6 +42,11 @@ SQLITE_EXTENSION_INIT1
 #include <accent.h>
 #include <assert.h>
 
+//When using statically:
+//1. define SQLITE_CORE
+//2. register with sqlite3_auto_extension() to use extension on all db connections
+//see: https://www.sqlite.org/loadext.html - 6. Statically Linking A Run-Time Loadable Extension
+
 static void uchex(sqlite3_context* ctx, int argc, sqlite3_value** argv) {
     assert(argc == 1);
     if (sqlite3_value_type(argv[0]) == SQLITE_TEXT)
