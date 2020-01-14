@@ -42,34 +42,61 @@ SQLITE_EXTENSION_INIT1
 #include <accent.h>
 #include <assert.h>
 
-static void containsPUA(sqlite3_context* ctx, int argc, sqlite3_value** argv)
-{
+static void uchex(sqlite3_context* ctx, int argc, sqlite3_value** argv) {
+    assert(argc == 1);
+    if (sqlite3_value_type(argv[0]) == SQLITE_TEXT)
+    {
+        unsigned const char *a = sqlite3_value_text(argv[0]);
+        int bufferLen = 1024;
+        char buffer[bufferLen];
+        hcucHex(a, bufferLen, buffer);
+
+        sqlite3_result_text(ctx, buffer, -1, SQLITE_TRANSIENT);
+    }
+    else
+    {
+      sqlite3_result_null(ctx);
+    }
+}
+
+static void containsPUA(sqlite3_context* ctx, int argc, sqlite3_value** argv) {
     assert(argc == 1);
     const unsigned char *a = sqlite3_value_text(argv[0]);
     int containsPUA = hccontainsPUA(a);
     sqlite3_result_int(ctx, containsPUA);
 }
 
-//returns -1 if a is before b, 0 if equal, 1 if b is before a
-static int hcgreekFunc(void *NotUsed, int len_a, const void *key_a, int len_b, const void *key_b)
-{
-    return compareSort(len_a, key_a, len_b, key_b);
+static int hcgreekFunc(
+  void *NotUsed,
+  int nKey1, const void *pKey1,
+  int nKey2, const void *pKey2
+){
+    return compareSort(nKey1, pKey1, nKey2, pKey2);
 }
 
-static void hcgreekNeeded(void *NotUsed, sqlite3 *db, int eTextRep, const char *zCollName)
-{
-    sqlite3_create_collation(db, zCollName, eTextRep, 0, hcgreekFunc);
+static void hcgreekNeeded(
+  void *NotUsed,
+  sqlite3 *db,
+  int eTextRep,
+  const char *zCollName
+){
+  sqlite3_create_collation(db, "hcgreek", eTextRep, 0, hcgreekFunc);
 }
 
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
-int sqlite3_hcgreek_init(sqlite3 *db, char **pzErrMsg, const sqlite3_api_routines *pApi)
-{
-    int rc = SQLITE_OK;
-    SQLITE_EXTENSION_INIT2(pApi);
-    rc = sqlite3_collation_needed(db, 0, hcgreekNeeded);
+int sqlite3_hcgreek_init(
+  sqlite3 *db,
+  char **pzErrMsg,
+  const sqlite3_api_routines *pApi
+){
+  int rc = SQLITE_OK;
+  SQLITE_EXTENSION_INIT2(pApi);
+  rc = sqlite3_collation_needed(db, 0, hcgreekNeeded);
     
-    sqlite3_create_function(db, "containsPUA", 1, SQLITE_UTF8, NULL, &containsPUA, NULL, NULL);
-    return rc;
+    sqlite3_create_function(db, "isPUA", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &containsPUA, NULL, NULL);
+    sqlite3_create_function(db, "HCHEX", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &uchex, NULL, NULL);
+    
+  return rc;
 }
