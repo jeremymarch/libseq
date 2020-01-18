@@ -32,6 +32,8 @@
 //we would get more variation
 //at max difficulty we would use different principal part for every change.
 
+int sqlite3_hcgreek_init(sqlite3 *db, char **pzErrMsg, const sqlite3_api_routines *pApi);
+
 //https://stackoverflow.com/questions/1941307/debug-print-macro-in-c
 
 #if defined(HCDEBUG) && ( defined(__ANDROID__) || defined(ANDROID) )
@@ -869,6 +871,16 @@ int vsInit(VerbSeqOptions *vs, const char *path)
     else
     {
         DEBUG_PRINT("SQLite db open, path: %s, size: %lld\n", dbpath, size);
+    }
+    
+    int ext_res = sqlite3_auto_extension( (void(*)(void))sqlite3_hcgreek_init );
+    if (ext_res == SQLITE_OK)
+    {
+        DEBUG_PRINT("extension res: %s\n", "ok");
+    }
+    else
+    {
+        DEBUG_PRINT("extension res error: %d\n", ext_res);
     }
 
     //char *check = "SELECT name FROM sqlite_master WHERE type='table' AND name='table_name'";
