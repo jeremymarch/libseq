@@ -908,7 +908,11 @@ int vsInit(VerbSeqOptions *vs, const char *path)
     "pos CHAR, " \
     "note CHAR, " \
     "seq INTEGER, " \
-    "sortkey CHAR); " \
+    "sortkey CHAR, " \
+    "verbClass INTEGER, " \
+    "updated INTEGER, " \
+    "arrowedDay INTEGER, " \
+    "pageLine CHAR); " \
 
     "CREATE TABLE IF NOT EXISTS verbseq (" \
     "id INTEGER PRIMARY KEY NOT NULL, " \
