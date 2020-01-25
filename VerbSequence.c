@@ -882,7 +882,13 @@ int vsInit(VerbSeqOptions *vs, const char *path)
     {
         DEBUG_PRINT("extension res error: %d\n", ext_res);
     }
-
+    
+    //For some reason even after calling sqlite3_auto_extension above,
+    //we still need to call sqlite3_hcgreek_init for hcgreek to be available
+    //to the create table and create index functions below????
+    //why does the process the lemma index?  VACUUM?
+    sqlite3_hcgreek_init(db,NULL,NULL);
+    
     //char *check = "SELECT name FROM sqlite_master WHERE type='table' AND name='table_name'";
     //"DROP TABLE IF EXISTS games; DROP TABLE IF EXISTS verbseq;
     //DROP TABLE IF EXISTS verbforms;
@@ -897,7 +903,7 @@ int vsInit(VerbSeqOptions *vs, const char *path)
     "CREATE TABLE IF NOT EXISTS hqvocab (" \
     "hqid INTEGER PRIMARY KEY UNIQUE NOT NULL, " \
     "unit INTEGER NOT NULL, " \
-    "lemma CHAR, " \
+    "lemma CHAR COLLATE hcgreek, " \
     "present CHAR, " \
     "future CHAR, " \
     "aorist CHAR, " \
@@ -913,6 +919,8 @@ int vsInit(VerbSeqOptions *vs, const char *path)
     "updated INTEGER, " \
     "arrowedDay INTEGER, " \
     "pageLine CHAR); " \
+    
+    "CREATE INDEX IF NOT EXISTS hqvoclemma ON hqvocab(lemma COLLATE hcgreek ASC); " \
 
     "CREATE TABLE IF NOT EXISTS verbseq (" \
     "id INTEGER PRIMARY KEY NOT NULL, " \
@@ -928,7 +936,7 @@ int vsInit(VerbSeqOptions *vs, const char *path)
     "elapsedtime VARCHAR(255), " \
     "incorrectAns VARCHAR(255), " \
     "FOREIGN KEY (gameid) REFERENCES games(gameid) " \
-    "); ";
+    ");";
 
     //"INSERT OR IGNORE INTO games VALUES (1,0,-1,0,0);"; //This is the Practice Game
 
