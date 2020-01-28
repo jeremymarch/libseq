@@ -55,7 +55,8 @@ static void uchex(sqlite3_context* ctx, int argc, sqlite3_value** argv) {
         int bufferLen = 1024;
         char buffer[bufferLen];
         hcucHex(a, bufferLen, buffer);
-
+        //https://www.sqlite.org/c3ref/result_blob.html
+        //I assume
         sqlite3_result_text(ctx, buffer, -1, SQLITE_TRANSIENT);
     }
     else
@@ -77,6 +78,8 @@ static int hcgreekFunc(
   int nKey2, const void *pKey2
 ){
     return compareSort(nKey1, pKey1, nKey2, pKey2);
+    //int s = (nKey1 < nKey2) ? nKey1 : nKey2;
+    //return memcmp(pKey1, pKey2, s);
 }
 
 static void hcgreekNeeded(
@@ -88,6 +91,7 @@ static void hcgreekNeeded(
   sqlite3_create_collation(db, "hcgreek", eTextRep, 0, hcgreekFunc);
 }
 
+//example: https://github.com/rurbina/sqlite/blob/61a2c938b559870d32b05ae3cbe9ecaf976e0023/es_mx.c
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
@@ -98,10 +102,12 @@ int sqlite3_hcgreek_init(
 ){
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
-  rc = sqlite3_collation_needed(db, 0, hcgreekNeeded);
+  //rc = sqlite3_collation_needed(db, 0, hcgreekNeeded);
+  sqlite3_create_collation(db, "hcgreek", SQLITE_UTF8, 0, hcgreekFunc);
+  rc = SQLITE_OK;
     
-    sqlite3_create_function(db, "isPUA", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &containsPUA, NULL, NULL);
-    sqlite3_create_function(db, "HCHEX", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &uchex, NULL, NULL);
+    //sqlite3_create_function(db, "isPUA", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &containsPUA, NULL, NULL);
+    //sqlite3_create_function(db, "HCHEX", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &uchex, NULL, NULL);
     
   return rc;
 }

@@ -900,8 +900,10 @@ int vsInit(VerbSeqOptions *vs, const char *path)
     "lives INT NOT NULL " \
     "); " \
     
+    //"drop table if exists hqvocab; " \
+    
     "CREATE TABLE IF NOT EXISTS hqvocab (" \
-    "hqid INTEGER PRIMARY KEY UNIQUE NOT NULL, " \
+    "hqid INTEGER PRIMARY KEY NOT NULL, " \
     "unit INTEGER NOT NULL, " \
     "lemma CHAR COLLATE hcgreek, " \
     "present CHAR, " \
@@ -918,9 +920,14 @@ int vsInit(VerbSeqOptions *vs, const char *path)
     "verbClass INTEGER, " \
     "updated INTEGER, " \
     "arrowedDay INTEGER, " \
-    "pageLine CHAR); " \
+    "pageLine CHAR ); " \
+    //COLLATE hcgreek (WORKS IF NOCASE) ADD THIS TO INDEX DISABLES PRIMARY KEY UNIQUE CHECK? \
+    
+    //"DROP INDEX IF EXISTS hqvoclemma; " \
     
     "CREATE INDEX IF NOT EXISTS hqvoclemma ON hqvocab(lemma COLLATE hcgreek ASC); " \
+    
+    //"CREATE INDEX IF NOT EXISTS hqvoclemma ON hqvocab(lemma COLLATE NOCASE); " \
 
     "CREATE TABLE IF NOT EXISTS verbseq (" \
     "id INTEGER PRIMARY KEY NOT NULL, " \
@@ -949,11 +956,14 @@ int vsInit(VerbSeqOptions *vs, const char *path)
     }
 
     char *verbForms = "verbforms";
+    char *hqv = "hqvocab";
     bool exists = sqliteTableExists(verbForms);
     int vfcount = sqliteTableCount(verbForms);
+    int hqvcount = sqliteTableCount(hqv);
 
-    DEBUG_PRINT("exists %d, count %d\n", exists, vfcount);
+    DEBUG_PRINT("exists %d, count %d, %d\n", exists, vfcount, hqvcount);
     assert(vfcount == 21117);
+    assert(hqvcount == 2112);
     assert(sqliteCheckFutSubj() == 0);
     //DEBUG_PRINT("COUNT FUT SUBJ: %d\n", sqliteCheckFutSubj());
 
