@@ -858,6 +858,16 @@ int vsInit(VerbSeqOptions *vs, const char *path)
     {
         sqlite3_close(db);
     }
+    
+    int ext_res = sqlite3_auto_extension( (void(*)(void))sqlite3_hcgreek_init );
+    if (ext_res == SQLITE_OK)
+    {
+        DEBUG_PRINT("extension res: %s\n", "ok");
+    }
+    else
+    {
+        DEBUG_PRINT("extension res error: %d\n", ext_res);
+    }
 
     char *zErrMsg = 0;
     int rc = sqlite3_open(dbpath, &db);
@@ -873,21 +883,13 @@ int vsInit(VerbSeqOptions *vs, const char *path)
         DEBUG_PRINT("SQLite db open, path: %s, size: %lld\n", dbpath, size);
     }
     
-    int ext_res = sqlite3_auto_extension( (void(*)(void))sqlite3_hcgreek_init );
-    if (ext_res == SQLITE_OK)
-    {
-        DEBUG_PRINT("extension res: %s\n", "ok");
-    }
-    else
-    {
-        DEBUG_PRINT("extension res error: %d\n", ext_res);
-    }
+
     
     //For some reason even after calling sqlite3_auto_extension above,
     //we still need to call sqlite3_hcgreek_init for hcgreek to be available
     //to the create table and create index functions below????
     //why does the process the lemma index?  VACUUM?
-    sqlite3_hcgreek_init(db,NULL,NULL);
+    //sqlite3_hcgreek_init(db,NULL,NULL);
     
     //char *check = "SELECT name FROM sqlite_master WHERE type='table' AND name='table_name'";
     //"DROP TABLE IF EXISTS games; DROP TABLE IF EXISTS verbseq;
@@ -961,9 +963,9 @@ int vsInit(VerbSeqOptions *vs, const char *path)
     int vfcount = sqliteTableCount(verbForms);
     int hqvcount = sqliteTableCount(hqv);
 
-    DEBUG_PRINT("exists %d, count %d, %d\n", exists, vfcount, hqvcount);
+    DEBUG_PRINT("db exists %d, verb form count %d, verb count %d\n", exists, vfcount, hqvcount);
     assert(vfcount == 21117);
-    assert(hqvcount == 2112);
+    //assert(hqvcount == 2112);
     assert(sqliteCheckFutSubj() == 0);
     //DEBUG_PRINT("COUNT FUT SUBJ: %d\n", sqliteCheckFutSubj());
 
