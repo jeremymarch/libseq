@@ -11,8 +11,8 @@
 
 #include <stdio.h>
 //https://stackoverflow.com/questions/2093069/xcode-how-to-include-c-library-and-header-file-to-cocoa-project
-#include <libmorph.h>
-#include <GreekForms.h>
+#include "libmorph.h"
+#include "GreekForms.h"
 
 enum {
     STATE_ERROR = 0,
