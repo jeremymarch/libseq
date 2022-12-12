@@ -313,6 +313,57 @@ Java_com_philolog_hc_GreekVerb_getForm( JNIEnv* env, jobject thiz, jint mf, jint
 }
 
 JNIEXPORT jstring JNICALL
+Java_com_philolog_hc_GreekVerb_getVoiceDescription( JNIEnv* env, jobject thiz )
+{
+    VerbFormD vf;
+    jfieldID fid;
+    jclass cls;
+    cls = (*env)->GetObjectClass(env, thiz);
+
+    fid = (*env)->GetFieldID(env,cls,"person","I");
+    vf.person = (unsigned char) (*env)->GetIntField(env, thiz ,fid);
+
+    fid = (*env)->GetFieldID(env,cls,"number","I");
+    vf.number = (unsigned char) (*env)->GetIntField(env, thiz ,fid);
+
+    fid = (*env)->GetFieldID(env,cls,"tense","I");
+    vf.tense = (unsigned char) (*env)->GetIntField(env, thiz ,fid);
+
+    fid = (*env)->GetFieldID(env,cls,"voice","I");
+    vf.voice = (unsigned char) (*env)->GetIntField(env, thiz ,fid);
+
+    fid = (*env)->GetFieldID(env,cls,"mood","I");
+    vf.mood = (unsigned char) (*env)->GetIntField(env, thiz ,fid);
+
+    fid = (*env)->GetFieldID(env,cls,"verbid","I");
+    vf.verbid = (*env)->GetIntField(env, thiz, fid);
+
+    char buffer[200];
+    int x = getVoiceDescription2(&vf);
+    if (x == 0)
+    {
+        snprintf(buffer, 200, "%s", "Active");
+    }
+    else if (x == 1)
+    {
+        snprintf(buffer, 200, "%s", "Middle");
+    }
+    else if (x == 2)
+    {
+        snprintf(buffer, 200, "%s", "Passive");
+    }
+    else if (x == 3)
+    {
+        snprintf(buffer, 200, "%s", "Middle/Passive");
+    }
+    else
+    {
+        snprintf(buffer, 200, "%s", "");
+    }
+    return (*env)->NewStringUTF(env, buffer);
+}
+
+JNIEXPORT jstring JNICALL
 Java_com_philolog_hc_GreekVerb_getAbbrevDescription( JNIEnv* env, jobject thiz )
 {
     VerbFormC vf;
