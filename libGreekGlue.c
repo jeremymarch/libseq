@@ -222,6 +222,26 @@ Java_com_philolog_hc_VerbSequence_vsReset( JNIEnv* env, jobject thiz )
 //bool compareFormsCheckMFRecordResult(UCS2 *expected, int expectedLen, UCS2 *given, int givenLen, bool MFPressed, char *elapsedTime, int *score)
 
 JNIEXPORT jboolean JNICALL
+Java_com_philolog_hc_GreekVerb_compareFormsCheckMF( JNIEnv* env, jobject thiz, jstring given, jstring expected, jboolean MFPressed) {
+    const char *givenChar = (*env)->GetStringUTFChars(env, given, 0);
+    const char *expectedChar = (*env)->GetStringUTFChars(env, expected, 0);
+    bool MFP = (MFPressed) ? true : false;
+
+    UCS2 givenucs2[1024];
+    int givenucs2Len = 0;
+    UCS2 expecteducs2[1024];
+    int expecteducs2Len = 0;
+
+    utf8_to_ucs2_string((const unsigned char *)givenChar, givenucs2, &givenucs2Len);
+    utf8_to_ucs2_string((const unsigned char *)expectedChar, expecteducs2, &expecteducs2Len);
+
+    bool ret = compareFormsCheckMF(expecteducs2, expecteducs2Len, givenucs2, givenucs2Len, MFP);
+
+    (*env)->ReleaseStringUTFChars(env, given, givenChar);
+    (*env)->ReleaseStringUTFChars(env, expected, expectedChar);
+    return ret;
+}
+JNIEXPORT jboolean JNICALL
 Java_com_philolog_hc_GreekVerb_compareFormsCheckMFRecordResult( JNIEnv* env, jobject thiz, jstring given, jstring expected, jstring elapsed, jboolean MFPressed)
 {
     //http://stackoverflow.com/questions/4181934/jni-converting-jstring-to-char
