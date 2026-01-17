@@ -688,7 +688,7 @@ bool isValidFormForUnit(VerbFormC *vf, int unit)
         if (vf->voice != ACTIVE || vf->mood == IMPERATIVE || (vf->tense == FUTURE && vf->mood == OPTATIVE))
             return false;
     }
-    else if (unit <= 5)
+    else if (unit <= 6)
     {
         //5 and under can't be middle, no imperatives
         if (vf->voice == MIDDLE || vf->mood == IMPERATIVE || (vf->tense == FUTURE && vf->mood == OPTATIVE))
